@@ -6,24 +6,35 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"os/exec"
+	"strings"
 	"sync"
 	"time"
 )
+
+type List struct {
+}
 
 type Worker struct {
 	port       int
 	connection *rpc.Client
 }
 
-func (w *Worker) GetApps(args *Args, reply *Reply) error {
-	//out, err := exec.Command("system_profiler", "-xml", "-detailLevel", "mini", "SPApplicationsDataType").Output()
-	//if err != nil {
-	//	log.Fatal(err)
-	//	return err
-	//}
-	r := []string{"Tanmay"}
-	reply.Applications = r
-	//fmt.Printf("%v", string(out))
+func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
+	out, err := exec.Command("find", "/Applications", "-maxdepth", "3", "-iname", "*.app").Output()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	r := strings.Split(string(out), "\n")
+	var res []string
+	for _, str := range r {
+		if len(str) > 0 {
+			res = append(res, strings.Split(str, "/")[2])
+		}
+	}
+	//fmt.Printf("%v", res)
+	reply.Applications = res
 	return nil
 }
 
@@ -49,6 +60,7 @@ func StartWorker() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("serving from port 1234 concurrently\n")
 	}()
 	go func() {
 		defer wg.Done()
@@ -56,6 +68,7 @@ func StartWorker() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("serving from port 1235 concurrently\n")
 	}()
 	wg.Wait()
 	//time.Sleep(5 * time.Second)

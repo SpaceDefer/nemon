@@ -12,21 +12,27 @@ type Coordinator struct {
 	workers  []*Worker
 	nWorkers int
 	socket   *rpc.Client
+	allowed  map[string]bool
 }
 
-func (c *Coordinator) SendHeartbeat(worker int, args *Args, reply *Reply) {
+func (c *Coordinator) SendHeartbeat(worker int, args *GetAppsArgs, reply *GetAppsReply) {
 	err := c.workers[worker].connection.Call("Worker.GetApps", args, reply)
 	if err != nil {
 		return
 	}
-	fmt.Printf("[%v]: %v received\n", c.workers[worker].port, reply.Applications)
+	fmt.Printf("app list received from port %v\n", c.workers[worker].port)
+	for _, app := range reply.Applications {
+		if !c.allowed[app] {
+			fmt.Printf("found an app on port [%v] which isn't allowed: %v\n", c.workers[worker].port, app)
+		}
+	}
 }
 
 func (c *Coordinator) BroadcastHeartbeats() {
 	for worker := 0; worker < c.nWorkers; worker++ {
-		fmt.Printf("%v\n", c.workers[worker].port)
-		args := &Args{}
-		go c.SendHeartbeat(worker, args, &Reply{})
+		fmt.Printf("coordinator sending a heartbeat to port %v\n", c.workers[worker].port)
+		args := &GetAppsArgs{}
+		go c.SendHeartbeat(worker, args, &GetAppsReply{})
 	}
 }
 
@@ -46,9 +52,11 @@ func StartCoordinator() {
 			{port: 1235, connection: connection2}},
 		socket:   connection1,
 		nWorkers: 2,
+		allowed:  map[string]bool{},
 	}
+
 	for true {
 		coordinator.BroadcastHeartbeats()
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10 * time.Second)
 	}
 }

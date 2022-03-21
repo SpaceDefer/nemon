@@ -1,8 +1,16 @@
 package bigBrother
 
-type Args struct {
+type GetAppsArgs struct {
 }
 
-type Reply struct {
+type GetAppsReply struct {
 	Applications []string
+}
+
+type DeleteAppArgs struct {
+	Application string
+}
+
+type DeleteAppReply struct {
+	Success bool
 }

@@ -1,4 +1,4 @@
-package scanAndDel
+package bigBrother
 
 import (
 	"fmt"

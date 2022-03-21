@@ -4,15 +4,15 @@ import (
 	"flag"
 	"strings"
 
-	"scan_and_del/scanAndDel"
+	"scan_and_del/bigBrother"
 )
 
 func main() {
 	mode := flag.String("mode", "worker", "coordinator or worker")
 	flag.Parse()
 	if strings.ToLower(*mode) == "worker" {
-		scanAndDel.StartWorker()
+		bigBrother.StartWorker()
 	} else {
-		scanAndDel.StartCoordinator()
+		bigBrother.StartCoordinator()
 	}
 }

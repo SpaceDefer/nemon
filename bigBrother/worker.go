@@ -16,7 +16,7 @@ type List struct {
 }
 
 type Worker struct {
-	port       int
+	port       int // replace by ip over wifi
 	connection *rpc.Client
 }
 
@@ -27,10 +27,11 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 		return err
 	}
 	r := strings.Split(string(out), "\n")
-	var res []string
+	var res []ApplicationInfo
 	for _, str := range r {
 		if len(str) > 0 {
-			res = append(res, strings.Split(str, "/")[2])
+			toAppend := strings.Split(str, "/")
+			res = append(res, ApplicationInfo{Name: toAppend[len(toAppend)-1], Location: str})
 		}
 	}
 	//fmt.Printf("%v", res)
@@ -56,20 +57,19 @@ func StartWorker() {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
+		fmt.Printf("serving from port 1234 concurrently\n")
 		err = http.ListenAndServe(":1234", nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("serving from port 1234 concurrently\n")
 	}()
 	go func() {
 		defer wg.Done()
+		fmt.Printf("serving from port 1235 concurrently\n")
 		err = http.ListenAndServe(":1235", nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("serving from port 1235 concurrently\n")
 	}()
 	wg.Wait()
-	//time.Sleep(5 * time.Second)
 }

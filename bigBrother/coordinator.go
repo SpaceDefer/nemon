@@ -5,34 +5,42 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"sync"
 	"time"
 )
 
 type Coordinator struct {
-	workers  []*Worker
+	workers  map[string]*Worker
 	nWorkers int
 	socket   *rpc.Client
 	allowed  map[string]bool
+	mu       sync.Mutex
 }
 
-func (c *Coordinator) SendHeartbeat(worker int, args *GetAppsArgs, reply *GetAppsReply) {
-	err := c.workers[worker].connection.Call("Worker.GetApps", args, reply)
+func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *GetAppsReply) {
+	err := worker.connection.Call("Worker.GetApps", args, reply)
 	if err != nil {
 		return
 	}
-	fmt.Printf("app list received from port %v\n", c.workers[worker].port)
+
+	// use the i/o console exclusively
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	fmt.Printf("app list received from worker %v\n", worker.port)
 	for _, app := range reply.Applications {
-		if !c.allowed[app] {
-			fmt.Printf("found an app on port [%v] which isn't allowed: %v\n", c.workers[worker].port, app)
+		if !c.allowed[app.Name] {
+			fmt.Printf("found an app on port [%v] which isn't allowed: %v\n", worker.port, app)
 		}
 	}
 }
 
 func (c *Coordinator) BroadcastHeartbeats() {
-	for worker := 0; worker < c.nWorkers; worker++ {
-		fmt.Printf("coordinator sending a heartbeat to port %v\n", c.workers[worker].port)
+	for _, worker := range c.workers {
+		fmt.Printf("coordinator sending a heartbeat to port %v\n", worker.port)
 		args := &GetAppsArgs{}
 		go c.SendHeartbeat(worker, args, &GetAppsReply{})
+		fmt.Printf("awaiting response from worker [%v]\n", worker.port)
 	}
 }
 
@@ -47,9 +55,10 @@ func StartCoordinator() {
 		log.Fatal(err)
 	}
 	coordinator := Coordinator{
-		workers: []*Worker{
-			{port: 1234, connection: connection1},
-			{port: 1235, connection: connection2}},
+		workers: map[string]*Worker{
+			"localhost:1234": {port: 1234, connection: connection1},
+			"localhost:1235": {port: 1235, connection: connection2},
+		},
 		socket:   connection1,
 		nWorkers: 2,
 		allowed:  map[string]bool{},
@@ -57,6 +66,6 @@ func StartCoordinator() {
 
 	for true {
 		coordinator.BroadcastHeartbeats()
-		time.Sleep(10 * time.Second)
+		time.Sleep(heartbeatInterval)
 	}
 }

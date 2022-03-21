@@ -4,13 +4,14 @@ type GetAppsArgs struct {
 }
 
 type GetAppsReply struct {
-	Applications []string
+	Applications []ApplicationInfo
 }
 
 type DeleteAppArgs struct {
-	Application string
+	Application ApplicationInfo
 }
 
 type DeleteAppReply struct {
-	Success bool
+	Success  bool
+	ErrorMsg string
 }

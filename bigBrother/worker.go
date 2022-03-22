@@ -2,7 +2,6 @@ package bigBrother
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/rpc"
 	"os"
@@ -16,16 +15,13 @@ type List struct {
 }
 
 type Worker struct {
-	port       int // replace by ip over wifi
+	port       int // replace by ip over Wi-Fi
 	connection *rpc.Client
 }
 
 func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 	out, err := exec.Command("find", "/Applications", "-maxdepth", "3", "-iname", "*.app").Output()
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+	checkError(err)
 	r := strings.Split(string(out), "\n")
 	var res []ApplicationInfo
 	for _, str := range r {
@@ -41,35 +37,23 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 
 func (w *Worker) Start() {
 	fmt.Printf("%v started as a worker\n", os.Getpid())
-	for true {
+	for {
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
 
-func StartWorker() {
+func StartWorker(port *string) {
 	worker := new(Worker)
 	err := rpc.Register(worker)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 	rpc.HandleHTTP()
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fmt.Printf("serving from port 1234 concurrently\n")
-		err = http.ListenAndServe(":1234", nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		fmt.Printf("serving from port 1235 concurrently\n")
-		err = http.ListenAndServe(":1235", nil)
-		if err != nil {
-			log.Fatal(err)
-		}
+		fmt.Printf("serving from port %v concurrently\n", *port)
+		err = http.ListenAndServe(":"+*port, nil)
+		checkError(err)
 	}()
 	wg.Wait()
 }

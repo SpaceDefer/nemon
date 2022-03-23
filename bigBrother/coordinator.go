@@ -2,11 +2,8 @@ package bigBrother
 
 import (
 	"fmt"
-	"net"
 	"net/rpc"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -20,7 +17,10 @@ type Coordinator struct {
 
 func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *GetAppsReply) {
 	err := worker.connection.Call("Worker.GetApps", args, reply)
-	checkError(err)
+	if err != nil {
+		return
+	}
+
 	// use the i/o console exclusively
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -43,33 +43,16 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 	}
 }
 
-func (c *Coordinator) BroadcastDiscoveryPings() {
-	hn, err := os.Hostname()
-	checkError(err)
-	ip, err := net.LookupIP(hn)
-	checkError(err)
-	fmt.Printf("\nmy ip: %v\n", ip[0].String())
-	vals := strings.Split(ip[0].String(), ".")
-	fmt.Printf("%v\n", vals)
-	mask := vals[0] + "." + vals[1] + "." + vals[2] + "."
-	for i := 0; i < 256; i++ {
-		fmt.Printf("%v\n", mask+strconv.Itoa(i))
-	}
-}
-
 func StartCoordinator() {
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	connection1, err := rpc.DialHTTP("tcp", "localhost:1234")
-	checkError(err)
-	connection2, err := rpc.DialHTTP("tcp", "localhost:1235")
-	checkError(err)
+	//connection1, err := rpc.DialHTTP("tcp", "localhost:1234")
+	//checkError(err)
+	//connection2, err := rpc.DialHTTP("tcp", "localhost:1235")
+	//checkError(err)
 	coordinator := Coordinator{
-		workers: map[string]*Worker{
-			"localhost:1234": {port: 1234, connection: connection1},
-			"localhost:1235": {port: 1235, connection: connection2},
-		},
-		socket:   connection1,
-		nWorkers: 2,
+		workers: map[string]*Worker{},
+		//socket:   connection1,
+		nWorkers: 0,
 		allowed:  map[string]bool{},
 	}
 	coordinator.BroadcastDiscoveryPings()

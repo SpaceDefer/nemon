@@ -42,7 +42,7 @@ func (w *Worker) Start() {
 	}
 }
 
-func StartWorker(port *string) {
+func StartWorker() {
 	worker := new(Worker)
 	err := rpc.Register(worker)
 	checkError(err)
@@ -51,8 +51,8 @@ func StartWorker(port *string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fmt.Printf("serving from port %v concurrently\n", *port)
-		err = http.ListenAndServe(":"+*port, nil)
+		fmt.Printf("serving from port %v concurrently\n", port)
+		err = http.ListenAndServe(port, nil)
 		checkError(err)
 	}()
 	wg.Wait()

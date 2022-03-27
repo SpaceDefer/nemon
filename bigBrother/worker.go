@@ -4,18 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/rpc"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 )
 
 type List struct {
 }
 
 type Worker struct {
-	port       int // replace by ip over Wi-Fi
+	port       int // replace by ip:port over Wi-Fi
 	connection *rpc.Client
 }
 
@@ -33,13 +31,6 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 	//fmt.Printf("%v", res)
 	reply.Applications = res
 	return nil
-}
-
-func (w *Worker) Start() {
-	fmt.Printf("%v started as a worker\n", os.Getpid())
-	for {
-		time.Sleep(1000 * time.Millisecond)
-	}
 }
 
 func StartWorker() {

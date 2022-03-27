@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	"scan_and_del/bigBrother"
+	"big_brother/bigBrother"
 )
 
 func main() {

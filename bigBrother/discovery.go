@@ -17,6 +17,8 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	fmt.Printf("found ip %v? %v", ip, res)
 	if res == "true" {
 		address := fmt.Sprintf(ip + port)
+
+		// TODO: global var if big brother installed in .rc
 		connection, err := rpc.DialHTTP("tcp", address)
 		checkError(err)
 		c.mu.Lock()
@@ -24,15 +26,11 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		c.workers[address] = &Worker{port: 8080, connection: connection}
 		c.mu.Unlock()
 	}
-
-	//if string(output) == "true" {
-	//	return true
-	//}
-	//return false
 }
 
 func (c *Coordinator) BroadcastDiscoveryPings() {
 	ip := GetLocalIP()
+
 	fmt.Printf("\nmy ip: %v\n", ip)
 	vals := strings.Split(ip, ".")
 	fmt.Printf("%v\n", vals)
@@ -45,9 +43,8 @@ func (c *Coordinator) BroadcastDiscoveryPings() {
 		// maybe we can show how fast multithreading is here in the slides?
 		go func(IP string) {
 			defer wg.Done()
-			c.SendDiscoveryPing(ip)
+			c.SendDiscoveryPing(IP)
 		}(ip)
 	}
 	wg.Wait()
-	//time.Sleep(10 * time.Second)
 }

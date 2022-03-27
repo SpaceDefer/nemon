@@ -1,4 +1,4 @@
-module scan_and_del
+module big_brother
 
 go 1.16
 

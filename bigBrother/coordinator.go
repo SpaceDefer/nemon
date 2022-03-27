@@ -13,6 +13,7 @@ type Coordinator struct {
 	socket   *rpc.Client
 	allowed  map[string]bool
 	mu       sync.Mutex
+	screenMu sync.Mutex
 }
 
 func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *GetAppsReply) {
@@ -22,8 +23,8 @@ func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *Ge
 	}
 
 	// use the i/o console exclusively
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.screenMu.Lock()
+	defer c.screenMu.Unlock()
 
 	fmt.Printf("app list received from worker %v\n", worker.port)
 	for _, app := range reply.Applications {
@@ -50,7 +51,16 @@ func StartCoordinator() {
 	//connection2, err := rpc.DialHTTP("tcp", "localhost:1235")
 	//checkError(err)
 	coordinator := Coordinator{
-		workers: map[string]*Worker{},
+		workers: map[string]*Worker{
+			//"localhost:1234": {
+			//	connection: connection1,
+			//	port:       1234,
+			//},
+			//"localhost:1235": {
+			//	connection: connection2,
+			//	port:       1235,
+			//},
+		},
 		//socket:   connection1,
 		nWorkers: 0,
 		allowed:  map[string]bool{},

@@ -16,7 +16,7 @@ type ApplicationInfo struct {
 
 func checkError(err error) {
 	if err != nil {
-		fmt.Print(err.Error())
+		fmt.Println(err.Error())
 	}
 }
 

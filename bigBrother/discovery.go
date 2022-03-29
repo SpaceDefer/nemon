@@ -37,21 +37,22 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 }
 
 func (c *Coordinator) BroadcastDiscoveryPings() {
-	ip := GetLocalIP()
+	localIP := GetLocalIP()
 
-	fmt.Printf("\nmy ip: %v\n", ip)
-	vals := strings.Split(ip, ".")
-	fmt.Printf("%v\n", vals)
+	fmt.Printf("\nmy ip: %v\n", localIP)
+	vals := strings.Split(localIP, ".")
 	mask := vals[0] + "." + vals[1] + "." + vals[2] + "."
 	//var wg sync.WaitGroup
 	for i := 0; i < 256; i++ {
 		ip := mask + strconv.Itoa(i)
 		//wg.Add(1)
 		// maybe we can show how fast multithreading is here in the slides?
-		go func(IP string) {
-			c.SendDiscoveryPing(IP)
-			//wg.Done()
-		}(ip)
+		if ip != localIP {
+			go func(IP string) {
+				c.SendDiscoveryPing(IP)
+				//wg.Done()
+			}(ip)
+		}
 	}
 	time.Sleep(5 * time.Second)
 	//wg.Wait()

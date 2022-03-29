@@ -50,8 +50,6 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 
 func StartCoordinator() {
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	//connection1, err := rpc.DialHTTP("tcp", "192.168.48.62:8080")
-	//checkError(err)
 	//connection2, err := rpc.DialHTTP("tcp", "localhost:1235")
 	//checkError(err)
 	coordinator := Coordinator{
@@ -61,16 +59,18 @@ func StartCoordinator() {
 			//	port:       8080,
 			//},
 		},
-		//socket:   connection1,
 		nWorkers: 0,
 		allowed:  map[string]bool{},
 	}
 	coordinator.BroadcastDiscoveryPings()
-	fmt.Printf("%v", coordinator.workers)
-	cycle := 1
-	for {
-		coordinator.BroadcastHeartbeats(cycle)
-		time.Sleep(heartbeatInterval)
-		cycle++
+	fmt.Printf("workers found: %v\n", coordinator.workers)
+	if coordinator.nWorkers > 0 {
+		cycle := 1
+		for {
+			coordinator.BroadcastHeartbeats(cycle)
+			time.Sleep(heartbeatInterval)
+			cycle++
+		}
 	}
+	fmt.Printf("coordinator exiting...\n")
 }

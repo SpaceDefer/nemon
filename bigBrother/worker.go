@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 )
 
 type List struct {
@@ -53,13 +52,8 @@ func StartWorker() {
 	//_, err = exec.Command("export", "IS_WORKER=\"true\"").Output()
 	//checkError(err)
 	rpc.HandleHTTP()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		fmt.Printf("serving from port %v concurrently\n", port)
-		err = http.ListenAndServe(port, nil)
-		checkError(err)
-	}()
-	wg.Wait()
+	fmt.Printf("serving from port %v\n", port)
+	err = http.ListenAndServe(port, nil)
+	checkError(err)
+	fmt.Printf("worker exiting...\n")
 }

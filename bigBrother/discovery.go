@@ -2,11 +2,15 @@ package bigBrother
 
 import (
 	"fmt"
-	"net/rpc"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	pb "big_brother/protos"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func (c *Coordinator) SendDiscoveryPing(ip string) {
@@ -24,14 +28,21 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		fmt.Printf("%v found\n", address)
 		// TODO: global var if big brother installed in .rc
 
-		connection, err := rpc.DialHTTP("tcp", address)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
+		//connection, err := rpc.DialHTTP("tcp", address)
+		//if err != nil {
+		//	fmt.Println(err.Error())
+		//	return
+		//}
+		//c.mu.Lock()
+		//c.nWorkers++
+		//c.workers[address] = &Worker{ip: ip, connection: connection}
+		//c.mu.Unlock()
+		connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		checkError(err)
+		client := pb.NewWorkerClient(connection)
 		c.mu.Lock()
+		c.workers[address] = &Worker{ip: ip, connection: connection, client: client}
 		c.nWorkers++
-		c.workers[address] = &Worker{ip: ip, connection: connection}
 		c.mu.Unlock()
 	}
 }

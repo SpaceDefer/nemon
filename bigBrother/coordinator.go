@@ -1,35 +1,41 @@
 package bigBrother
 
 import (
+	"context"
 	"fmt"
-	"net/rpc"
 	"os"
 	"sync"
 	"time"
+
+	pb "big_brother/protos"
 )
 
 type Coordinator struct {
 	workers  map[string]*Worker
 	nWorkers int
-	socket   *rpc.Client
 	allowed  map[string]bool
 	mu       sync.Mutex
 	screenMu sync.Mutex
 }
 
 func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *GetAppsReply) {
-	err := worker.connection.Call("Worker.GetApps", args, reply)
-	if err != nil {
-		fmt.Printf(err.Error())
-		return
-	}
+	//err := worker.connection.Call("Worker.GetApps", args, reply)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
+	checkError(err)
 	// use the i/o console exclusively
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
 
 	fmt.Printf("app list received from worker %v\n", worker.ip)
-	for _, app := range reply.Applications {
+	for _, app := range response.Applications {
 		if !c.allowed[app.Name] {
 			fmt.Printf("found an app on ip [%v] which isn't allowed: %v\n", worker.ip, app)
 		}
@@ -45,6 +51,13 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
 		args := &GetAppsArgs{}
 		go c.SendHeartbeat(worker, args, &GetAppsReply{})
+	}
+}
+
+func (c *Coordinator) Cleanup() {
+	for _, worker := range c.workers {
+		err := worker.connection.Close()
+		checkError(err)
 	}
 }
 
@@ -66,11 +79,12 @@ func StartCoordinator() {
 	fmt.Printf("workers found: %v\n", coordinator.workers)
 	if coordinator.nWorkers > 0 {
 		cycle := 1
-		for {
+		for cycle < 4 {
 			coordinator.BroadcastHeartbeats(cycle)
 			time.Sleep(heartbeatInterval)
 			cycle++
 		}
 	}
+	coordinator.Cleanup()
 	fmt.Printf("coordinator exiting...\n")
 }

@@ -1,20 +1,30 @@
 package bigBrother
 
 import (
+	"context"
 	"fmt"
-	"net/http"
-	"net/rpc"
+	"log"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
+
+	pb "big_brother/protos"
+
+	"google.golang.org/grpc"
 )
 
 type List struct {
 }
 
+type workerServer struct {
+	pb.UnimplementedWorkerServer
+}
+
 type Worker struct {
 	ip         string // replace by ip:port over Wi-Fi
-	connection *rpc.Client
+	client     pb.WorkerClient
+	connection *grpc.ClientConn
 }
 
 func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
@@ -44,16 +54,39 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 	return nil
 }
 
+func (ws *workerServer) GetApps(ctx context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	fmt.Printf("got a GetApps gRPC with context %v", ctx)
+	var applications []*pb.GetAppsResponse_ApplicationInfo
+	applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{Name: "tanmay", Location: "/tanmay"})
+	response := &pb.GetAppsResponse{Applications: applications}
+	return response, nil
+}
+
+const workerAddr = "localhost" + port
+
 func StartWorker() {
-	worker := new(Worker)
-	err := rpc.Register(worker)
-	checkError(err)
-	fmt.Println(os.Getenv("OS"))
-	//_, err = exec.Command("export", "IS_WORKER=\"true\"").Output()
+	//worker := new(Worker)
+	//err := rpc.Register(worker)
 	//checkError(err)
-	rpc.HandleHTTP()
-	fmt.Printf("serving from port %v\n", port)
-	err = http.ListenAndServe(port, nil)
+	//fmt.Println(os.Getenv("OS"))
+	////_, err = exec.Command("export", "IS_WORKER=\"true\"").Output()
+	////checkError(err)
+	//rpc.HandleHTTP()
+	//fmt.Printf("serving from port %v\n", port)
+	//err = http.ListenAndServe(port, nil)
+	//checkError(err)
+	//fmt.Printf("worker exiting...\n")
+	conn, err := net.Listen("tcp", workerAddr)
+
 	checkError(err)
-	fmt.Printf("worker exiting...\n")
+
+	grpcServer := grpc.NewServer()
+
+	server := workerServer{}
+
+	pb.RegisterWorkerServer(grpcServer, &server)
+	fmt.Printf("starting gRPC server at port %v...\n", port)
+	if err := grpcServer.Serve(conn); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "big_brother/bigBrother";
+
+service Worker{
+  rpc GetApps(GetAppsRequest) returns (GetAppsResponse);
+}
+
+message GetAppsRequest{}
+
+message GetAppsResponse{
+  message ApplicationInfo{
+    string name = 1;
+    string location = 2;
+  }
+  repeated ApplicationInfo applications = 1;
+}

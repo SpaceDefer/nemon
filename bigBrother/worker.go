@@ -56,15 +56,13 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 	return nil
 }
 
-func (ws *workerServer) GetApps(ctx context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
-	fmt.Printf("got a GetApps gRPC with context %v", ctx)
+func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	fmt.Printf("got a GetApps gRPC\n")
 	var applications []*pb.GetAppsResponse_ApplicationInfo
 	applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{Name: "tanmay", Location: "/tanmay"})
 	response := &pb.GetAppsResponse{Applications: applications}
 	return response, nil
 }
-
-const workerAddr = "localhost" + port
 
 func StartWorker() {
 	//worker := new(Worker)
@@ -78,6 +76,8 @@ func StartWorker() {
 	//err = http.ListenAndServe(port, nil)
 	//checkError(err)
 	//fmt.Printf("worker exiting...\n")
+	ip := GetLocalIP()
+	workerAddr := ip + port
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {

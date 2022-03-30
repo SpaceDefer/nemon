@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	pb "big_brother/protos"
@@ -29,7 +31,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *Ge
 	defer cancel()
 
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
-	checkError(err)
+	if err != nil {
+		fmt.Printf("occured %v\n", err.Error())
+		return
+	}
 	// use the i/o console exclusively
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
@@ -55,6 +60,9 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 }
 
 func (c *Coordinator) Cleanup() {
+	fmt.Printf("running cleanup...\n")
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	for _, worker := range c.workers {
 		err := worker.connection.Close()
 		checkError(err)
@@ -75,9 +83,21 @@ func StartCoordinator() {
 		nWorkers: 0,
 		allowed:  map[string]bool{},
 	}
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
+	go func() {
+		<-sigCh
+		fmt.Printf("\ncoordinator exiting gracefully...\n")
+		coordinator.Cleanup()
+		os.Exit(1)
+	}()
 	coordinator.BroadcastDiscoveryPings()
-	fmt.Printf("workers found: %v\n", coordinator.workers)
-	if coordinator.nWorkers > 0 {
+	coordinator.mu.Lock()
+	nWorkers := coordinator.nWorkers
+	workers := coordinator.workers
+	coordinator.mu.Unlock()
+	fmt.Printf("workers found: %v\n", workers)
+	if nWorkers > 0 {
 		cycle := 1
 		for cycle < 4 {
 			coordinator.BroadcastHeartbeats(cycle)
@@ -85,6 +105,4 @@ func StartCoordinator() {
 			cycle++
 		}
 	}
-	coordinator.Cleanup()
-	fmt.Printf("coordinator exiting...\n")
 }

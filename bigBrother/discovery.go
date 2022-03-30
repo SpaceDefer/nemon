@@ -38,7 +38,10 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		//c.workers[address] = &Worker{ip: ip, connection: connection}
 		//c.mu.Unlock()
 		connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		checkError(err)
+		if err != nil {
+			fmt.Printf("error occured %v\n", err.Error())
+			return
+		}
 		client := pb.NewWorkerClient(connection)
 		c.mu.Lock()
 		c.workers[address] = &Worker{ip: ip, connection: connection, client: client}

@@ -7,7 +7,9 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	pb "big_brother/protos"
 
@@ -76,6 +78,14 @@ func StartWorker() {
 	//err = http.ListenAndServe(port, nil)
 	//checkError(err)
 	//fmt.Printf("worker exiting...\n")
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
+	go func() {
+		<-sigCh
+		fmt.Printf("\nworker exiting gracefully...\n")
+		// worker cleanup if needed
+		os.Exit(1)
+	}()
 	conn, err := net.Listen("tcp", workerAddr)
 
 	checkError(err)

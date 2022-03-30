@@ -29,6 +29,19 @@ installed apps on the PC using RPCs.
 
 ## Video Demo of the Project : 
 
+Worker PC :
+
+
+https://user-images.githubusercontent.com/63122405/160531088-9b1ac07f-16ef-4e7e-b0e4-09ca5f28961e.mov
+
+Coordinator PC :
+
+
+
+https://user-images.githubusercontent.com/55156702/160531252-cbe7b485-def2-490c-8bba-439bbf8d2f77.mov
+
+
+
 ## UI Demo of the Project : 
 The following UI prototype can be found [here](https://www.figma.com/proto/GYTEPNoBelBPkCCZvGyrnQ/Dashboard?node-id=214%3A481&scaling=contain&page-id=0%3A1&starting-point-node-id=1%3A6).
 

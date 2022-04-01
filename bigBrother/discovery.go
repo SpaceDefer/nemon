@@ -27,16 +27,6 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 
 		fmt.Printf("%v found\n", address)
 		// TODO: global var if big brother installed in .rc
-
-		//connection, err := rpc.DialHTTP("tcp", address)
-		//if err != nil {
-		//	fmt.Println(err.Error())
-		//	return
-		//}
-		//c.mu.Lock()
-		//c.nWorkers++
-		//c.workers[address] = &Worker{ip: ip, connection: connection}
-		//c.mu.Unlock()
 		connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			fmt.Printf("error occured %v\n", err.Error())

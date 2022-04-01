@@ -20,19 +20,13 @@ type Coordinator struct {
 	screenMu sync.Mutex
 }
 
-func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *GetAppsReply) {
-	//err := worker.connection.Call("Worker.GetApps", args, reply)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return
-	//}
-
+func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
 	if err != nil {
-		fmt.Printf("occured %v\n", err.Error())
+		fmt.Printf("%v\n", err.Error())
 		return
 	}
 	// use the i/o console exclusively
@@ -41,8 +35,8 @@ func (c *Coordinator) SendHeartbeat(worker *Worker, args *GetAppsArgs, reply *Ge
 
 	fmt.Printf("app list received from worker %v\n", worker.ip)
 	for _, app := range response.Applications {
-		if !c.allowed[app.Name] {
-			fmt.Printf("found an app on ip [%v] which isn't allowed: %v\n", worker.ip, app)
+		if !c.allowed[app.GetName()] {
+			fmt.Printf("found an app on ip [%v] which isn't allowed: %v\n", worker.ip, app.GetName())
 		}
 	}
 }
@@ -54,8 +48,7 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 	defer c.mu.Unlock()
 	for _, worker := range c.workers {
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
-		args := &GetAppsArgs{}
-		go c.SendHeartbeat(worker, args, &GetAppsReply{})
+		go c.SendHeartbeat(worker)
 	}
 }
 
@@ -71,13 +64,14 @@ func (c *Coordinator) Cleanup() {
 
 func StartCoordinator() {
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	//connection2, err := rpc.DialHTTP("tcp", "localhost:1235")
+	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)
 	coordinator := Coordinator{
 		workers: map[string]*Worker{
-			//"192.168.48.62:8080": {
-			//	connection: connection1,
-			//	port:       8080,
+			//"localhost:8080": {
+			//	connection: connection,
+			//	client:     pb.NewWorkerClient(connection),
+			//	ip:         "localhost",
 			//},
 		},
 		nWorkers: 0,

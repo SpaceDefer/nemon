@@ -29,11 +29,15 @@ type Worker struct {
 	connection *grpc.ClientConn
 }
 
-func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
+func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	fmt.Printf("got a GetApps gRPC\n")
 	var err error
 	var out []byte
-	var res []ApplicationInfo
-	switch os.Getenv("OS") {
+	var applications []*pb.GetAppsResponse_ApplicationInfo
+
+	OS := os.Getenv("OS")
+
+	switch OS {
 	case "darwin":
 		out, err = exec.Command("find", "/Applications", "-maxdepth", "3", "-iname", "*.app").Output()
 		checkError(err)
@@ -41,7 +45,7 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 		for _, str := range r {
 			if len(str) > 0 {
 				toAppend := strings.Split(str, "/")
-				res = append(res, ApplicationInfo{Name: toAppend[len(toAppend)-1], Location: str})
+				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{Name: toAppend[len(toAppend)-1], Location: str})
 			}
 		}
 	case "windows":
@@ -49,35 +53,16 @@ func (w *Worker) GetApps(_ *GetAppsArgs, reply *GetAppsReply) error {
 	case "linux":
 		out, err = exec.Command("apt", "list", "--installed").Output()
 	default:
-		return nil
+		return nil, fmt.Errorf("unrecognised os %v", OS)
 	}
-	//fmt.Printf("%v", res)
-	reply.Applications = res
-	return nil
-}
-
-func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
-	fmt.Printf("got a GetApps gRPC\n")
-	var applications []*pb.GetAppsResponse_ApplicationInfo
-	applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{Name: "tanmay", Location: "/tanmay"})
 	response := &pb.GetAppsResponse{Applications: applications}
 	return response, nil
 }
 
 func StartWorker() {
-	//worker := new(Worker)
-	//err := rpc.Register(worker)
-	//checkError(err)
-	//fmt.Println(os.Getenv("OS"))
-	////_, err = exec.Command("export", "IS_WORKER=\"true\"").Output()
-	////checkError(err)
-	//rpc.HandleHTTP()
-	//fmt.Printf("serving from port %v\n", port)
-	//err = http.ListenAndServe(port, nil)
-	//checkError(err)
-	//fmt.Printf("worker exiting...\n")
 	ip := GetLocalIP()
 	workerAddr := ip + port
+	fmt.Printf("my ip on the network: %v\n", ip)
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {

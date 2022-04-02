@@ -2,24 +2,49 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
+	"os/user"
 	"runtime"
 	"strings"
 
 	"big_brother/bigBrother"
 )
 
-func main() {
-	mode := flag.String("mode", "worker", "coordinator or worker")
-	//port := flag.String("port", "1234", "enter a port")
+var (
+	mode = flag.String("mode", "worker", "coordinator or worker")
+)
+
+func Init() error {
 	flag.Parse()
-	err := os.Setenv("MODE", *mode)
+	hostname, err := os.Hostname()
 	if err != nil {
-		return
+		return err
 	}
-	err = os.Setenv("OS", runtime.GOOS)
+	currentUser, err := user.Current()
 	if err != nil {
-		return
+		return err
+	}
+	username := currentUser.Username
+	if err = os.Setenv("MODE", *mode); err != nil {
+		return err
+	}
+	if err = os.Setenv("OS", runtime.GOOS); err != nil {
+		return err
+	}
+	if err = os.Setenv("USERNAME", username); err != nil {
+		return err
+	}
+	if err = os.Setenv("HOSTNAME", hostname); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	err := Init()
+	if err != nil {
+		log.Fatal(err)
 	}
 	if strings.ToLower(*mode) == "worker" {
 		bigBrother.StartWorker()

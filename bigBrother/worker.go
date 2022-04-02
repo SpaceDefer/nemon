@@ -36,9 +36,7 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 	var out []byte
 	var applications []*pb.GetAppsResponse_ApplicationInfo
 
-	OS := os.Getenv("OS")
-
-	switch OS {
+	switch systemInfo.OS {
 	case "darwin":
 		out, err = exec.Command("find", "/Applications", "-maxdepth", "3", "-iname", "*.app").Output()
 		checkError(err)
@@ -54,7 +52,7 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 	case "linux":
 		out, err = exec.Command("apt", "list", "--installed").Output()
 	default:
-		return nil, fmt.Errorf("unrecognised os %v", OS)
+		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
 	}
 	response := &pb.GetAppsResponse{Applications: applications}
 	return response, nil
@@ -62,9 +60,14 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 
 // StartWorker handles starting up the worker on the machine
 func StartWorker() {
+	InitSystemInfo()
 	ip := GetLocalIP()
 	workerAddr := ip + port
-	fmt.Printf("my ip on the network: %v\n", ip)
+	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
+		ip,
+		systemInfo.hostname,
+		systemInfo.username,
+	)
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {

@@ -3,6 +3,7 @@ package bigBrother
 import (
 	"fmt"
 	"net"
+	"os"
 	"time"
 )
 
@@ -34,4 +35,21 @@ func GetLocalIP() string {
 		}
 	}
 	return ""
+}
+
+// SystemInfo contains frequently required information about the system on which
+// the software is running
+type SystemInfo struct {
+	OS       string
+	hostname string
+	username string
+}
+
+var systemInfo SystemInfo
+
+// InitSystemInfo initialises the SystemInfo struct for the system
+func InitSystemInfo() {
+	systemInfo.OS = os.Getenv("OS")
+	systemInfo.hostname = os.Getenv("HOSTNAME")
+	systemInfo.username = os.Getenv("USERNAME")
 }

@@ -68,6 +68,7 @@ func (c *Coordinator) Cleanup() {
 
 // StartCoordinator starts up a Coordinator process
 func StartCoordinator() {
+	InitSystemInfo()
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)

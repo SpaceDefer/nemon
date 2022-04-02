@@ -16,19 +16,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-type List struct {
-}
-
+// workerServer is  wrapper for pb.UnimplementedWorkerServer
 type workerServer struct {
 	pb.UnimplementedWorkerServer
 }
 
+// Worker struct is used by the
+// Coordinator to connect to a worker
 type Worker struct {
-	ip         string // replace by ip:port over Wi-Fi
-	client     pb.WorkerClient
-	connection *grpc.ClientConn
+	ip         string           // ip address of the worker connected
+	client     pb.WorkerClient  // client API exposed for the Coordinator
+	connection *grpc.ClientConn // connection to the worker
 }
 
+// GetApps implements GetApps RPC from the generated ProtoBuf file
 func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	fmt.Printf("got a GetApps gRPC\n")
 	var err error
@@ -59,6 +60,7 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 	return response, nil
 }
 
+// StartWorker handles starting up the worker on the machine
 func StartWorker() {
 	ip := GetLocalIP()
 	workerAddr := ip + port

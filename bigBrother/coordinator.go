@@ -12,14 +12,16 @@ import (
 	pb "big_brother/protos"
 )
 
+// Coordinator struct implements the coordinator
 type Coordinator struct {
-	workers  map[string]*Worker
-	nWorkers int
-	allowed  map[string]bool
-	mu       sync.Mutex
-	screenMu sync.Mutex
+	workers  map[string]*Worker // workers map ip addresses to Worker structs
+	nWorkers int                // nWorkers gives the number of workers
+	allowed  map[string]bool    // list of all allowed applications
+	mu       sync.Mutex         // mu mutex to prevent data races
+	screenMu sync.Mutex         // screenMu to print on the screen exclusively
 }
 
+// SendHeartbeat to a single Worker
 func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -41,9 +43,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	}
 }
 
-func (c *Coordinator) BroadcastHeartbeats(cnt int) {
+// BroadcastHeartbeats to multiple workers, cycle signifies the heartbeat cycle
+func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Print("\033[H\033[2J")
-	fmt.Printf("heartbeat cycle number %v\n", cnt)
+	fmt.Printf("heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, worker := range c.workers {
@@ -52,6 +55,7 @@ func (c *Coordinator) BroadcastHeartbeats(cnt int) {
 	}
 }
 
+// Cleanup closes the connections in the event of a shutdown
 func (c *Coordinator) Cleanup() {
 	fmt.Printf("running cleanup...\n")
 	c.mu.Lock()
@@ -62,6 +66,7 @@ func (c *Coordinator) Cleanup() {
 	}
 }
 
+// StartCoordinator starts up a Coordinator process
 func StartCoordinator() {
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))

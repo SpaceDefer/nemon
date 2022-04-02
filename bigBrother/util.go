@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
+// heartbeatInterval is the duration the Coordinator waits to send RPCs
 const heartbeatInterval = 10 * time.Second
+
+// default port
 const port = ":8080"
 
-type ApplicationInfo struct {
-	Name     string
-	Location string
-}
-
+// checkError helper
 func checkError(err error) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
 
+// GetLocalIP gets the IP address on the connection
 func GetLocalIP() string {
 	addresses, err := net.InterfaceAddrs()
 	if err != nil {

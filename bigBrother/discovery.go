@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// SendDiscoveryPing sends a single discovery ping to the give ip
 func (c *Coordinator) SendDiscoveryPing(ip string) {
 	Command := fmt.Sprintf("ping -c 1 -W 1 " + ip + " > /dev/null && echo true || echo false")
 	output, err := exec.Command("/bin/sh", "-c", Command).Output()
@@ -40,6 +41,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	}
 }
 
+// BroadcastDiscoveryPings to available IP addresses on the network
 func (c *Coordinator) BroadcastDiscoveryPings() {
 	localIP := GetLocalIP()
 

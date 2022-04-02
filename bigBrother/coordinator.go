@@ -17,7 +17,7 @@ type Coordinator struct {
 	workers  map[string]*Worker // workers map ip addresses to Worker structs
 	nWorkers int                // nWorkers gives the number of workers
 	allowed  map[string]bool    // list of all allowed applications
-	mu       sync.Mutex         // mu mutex to prevent data races
+	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
 }
 
@@ -95,7 +95,7 @@ func StartCoordinator() {
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers
 	coordinator.mu.Unlock()
-	fmt.Printf("workers found: %v\n", workers)
+	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
 	if nWorkers > 0 {
 		cycle := 1
 		for cycle < 4 {

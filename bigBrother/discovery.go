@@ -18,27 +18,25 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	Command := fmt.Sprintf("ping -c 1 -W 1 " + ip + " > /dev/null && echo true || echo false")
 	output, err := exec.Command("/bin/sh", "-c", Command).Output()
 	checkError(err)
-	res := string(output)
-	//fmt.Printf("%v\n", len(res))
-	if len(res) == 6 {
+	res := strings.TrimSpace(string(output))
+	if res == "false" {
 		return
 	}
-	if len(res) == 5 {
-		address := fmt.Sprintf(ip + port)
+	address := fmt.Sprintf(ip + port)
 
-		fmt.Printf("%v found\n", address)
-		// TODO: global var if big brother installed in .rc
-		connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			fmt.Printf("error occured %v\n", err.Error())
-			return
-		}
-		client := pb.NewWorkerClient(connection)
-		c.mu.Lock()
-		c.workers[address] = &Worker{ip: ip, connection: connection, client: client}
-		c.nWorkers++
-		c.mu.Unlock()
+	fmt.Printf("%v found\n", address)
+	// TODO: global var if big brother installed in .rc
+	connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("error occured %v\n", err.Error())
+		return
 	}
+	client := pb.NewWorkerClient(connection)
+	c.mu.Lock()
+	c.workers[address] = &Worker{ip: ip, connection: connection, client: client}
+	c.nWorkers++
+	c.mu.Unlock()
+
 }
 
 // BroadcastDiscoveryPings to available IP addresses on the network

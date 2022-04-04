@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "big_brother/bigBrother";
+option go_package = "nemon/nemon";
 
 service Worker{
   rpc GetApps(GetAppsRequest) returns (GetAppsResponse);

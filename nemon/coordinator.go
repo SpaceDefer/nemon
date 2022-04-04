@@ -1,15 +1,19 @@
-package bigBrother
+package nemon
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	pb "big_brother/protos"
+	pb "nemon/protos"
+
+	"github.com/gorilla/websocket"
 )
 
 // Coordinator struct implements the coordinator
@@ -19,6 +23,54 @@ type Coordinator struct {
 	allowed  map[string]bool    // list of all allowed applications
 	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func homePage(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprintf(w, "Home Page")
+	if err != nil {
+		return
+	}
+}
+
+//func reader(conn *websocket.Conn) {
+//	for {
+//		// read in a message
+//		messageType, p, err := conn.ReadJSON()
+//		if err != nil {
+//			log.Println(err)
+//			return
+//		}
+//		// print out that message for clarity
+//		fmt.Println("hehe received")
+//
+//		if err := conn.WriteMessage(messageType, p); err != nil {
+//			log.Println(err)
+//			return
+//		}
+//
+//	}
+//}
+
+func wsEndpoint(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	_, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println("Client Connected")
+
+	//reader(ws)
+}
+
+func setupRoutes() {
+	http.HandleFunc("/", homePage)
+	http.HandleFunc("/ws", wsEndpoint)
 }
 
 // SendHeartbeat to a single Worker
@@ -91,18 +143,22 @@ func StartCoordinator() {
 		coordinator.Cleanup()
 		os.Exit(1)
 	}()
-	coordinator.BroadcastDiscoveryPings()
-	coordinator.mu.Lock()
-	nWorkers := coordinator.nWorkers
-	workers := coordinator.workers
-	coordinator.mu.Unlock()
-	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
-	if nWorkers > 0 {
-		cycle := 1
-		for cycle < 4 {
-			coordinator.BroadcastHeartbeats(cycle)
-			time.Sleep(heartbeatInterval)
-			cycle++
-		}
-	}
+	//
+	//setupRoutes()
+	//log.Fatal(http.ListenAndServe(":4000", nil))
+
+	//coordinator.BroadcastDiscoveryPings()
+	//coordinator.mu.Lock()
+	//nWorkers := coordinator.nWorkers
+	//workers := coordinator.workers
+	//coordinator.mu.Unlock()
+	//fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
+	//if nWorkers > 0 {
+	//	cycle := 1
+	//	for cycle < 4 {
+	//		coordinator.BroadcastHeartbeats(cycle)
+	//		time.Sleep(heartbeatInterval)
+	//		cycle++
+	//	}
+	//}
 }

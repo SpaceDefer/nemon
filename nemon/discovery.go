@@ -1,4 +1,4 @@
-package bigBrother
+package nemon
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	pb "big_brother/protos"
+	pb "nemon/protos"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

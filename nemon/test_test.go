@@ -1,4 +1,4 @@
-package bigBrother
+package nemon
 
 import (
 	"net"

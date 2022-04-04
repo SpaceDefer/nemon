@@ -1,4 +1,4 @@
-package bigBrother
+package nemon
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	pb "big_brother/protos"
+	pb "nemon/protos"
 
 	"google.golang.org/grpc"
 )

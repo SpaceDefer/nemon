@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -8,66 +8,69 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
-func sendMessage(conn *websocket.Conn){
-		var err error
-    msg := `Hi, the handshake is complete!`
+func sendMessage(conn *websocket.Conn) {
+	var err error
+	msg := `Hi, the handshake is complete!`
 
-		if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
-				log.Println(err)
-				return
-		}else{
-				fmt.Println("Message sent")
-		}
-
+	if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+		log.Println(err)
+		return
+	} else {
+		fmt.Println("Message sent")
+	}
 
 }
 
 func reader(conn *websocket.Conn) {
-    for {
-        messageType, p, err := conn.ReadMessage()
-        if err != nil {
-            log.Println(err)
-            return
-        }
-        fmt.Println(string(p))
-				sendMessage(conn)
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		fmt.Println(string(p))
+		sendMessage(conn)
 
-        if err := conn.WriteMessage(messageType, p); err != nil {
-            log.Println(err)
-            return
-        }
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			log.Println(err)
+			return
+		}
 
-    }
+	}
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
 
-    fmt.Println(r.Host)
-		CheckOrigin := func(r *http.Request) bool {
-			return true
-		}
-		upgrader.CheckOrigin = CheckOrigin
+	fmt.Println(r.Host)
+	CheckOrigin := func(r *http.Request) bool {
+		return true
+	}
+	upgrader.CheckOrigin = CheckOrigin
 
-    ws, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        log.Println(err)
-  }
-    reader(ws)
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+	reader(ws)
 }
 
 func setupRoutes() {
-  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Simple Server")
-  })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Simple Server")
+	})
 
-    http.HandleFunc("/ws", serveWs)
+	http.HandleFunc("/ws", serveWs)
 }
 
-func main() {
-
-    setupRoutes()
-    http.ListenAndServe(":8080", nil)
-
+func StartServer() {
+	setupRoutes()
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return
+	}
 }

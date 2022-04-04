@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"big_brother/bigBrother"
+	"nemon/nemon"
 )
 
 var (
@@ -47,8 +47,8 @@ func main() {
 		log.Fatal(err)
 	}
 	if strings.ToLower(*mode) == "worker" {
-		bigBrother.StartWorker()
+		nemon.StartWorker()
 	} else {
-		bigBrother.StartCoordinator()
+		nemon.StartCoordinator()
 	}
 }

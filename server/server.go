@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,15 +29,21 @@ func sendMessage(conn *websocket.Conn) {
 
 func reader(conn *websocket.Conn) {
 	for {
-		messageType, p, err := conn.ReadMessage()
+		var req Request
+		err := conn.ReadJSON(&req)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		fmt.Println(string(p))
+		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
 		sendMessage(conn)
 
-		if err := conn.WriteMessage(messageType, p); err != nil {
+		reply, err := json.Marshal(&Reply{Ok: true})
+		if err != nil {
+			return
+		}
+
+		if err := conn.WriteMessage(websocket.TextMessage, reply); err != nil {
 			log.Println(err)
 			return
 		}

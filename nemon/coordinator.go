@@ -22,6 +22,11 @@ type Coordinator struct {
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
 }
 
+// SendDeleteApplication to an individual Worker
+func (c *Coordinator) SendDeleteApplication(application *pb.GetAppsResponse_ApplicationInfo, worker *Worker) {
+	fmt.Println("will delete")
+}
+
 // SendHeartbeat to a single Worker
 func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -103,7 +108,7 @@ func StartCoordinator() {
 	workers := coordinator.workers
 	coordinator.mu.Unlock()
 	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
-	if nWorkers > 0 {
+	if nWorkers > -1 {
 		cycle := 1
 		for cycle < 4 {
 			coordinator.BroadcastHeartbeats(cycle)

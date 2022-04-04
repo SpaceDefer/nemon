@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	key  = flag.String("key", "", "worker key, same as the coordinator")
 	mode = flag.String("mode", "worker", "coordinator or worker")
 )
 
@@ -36,6 +37,9 @@ func Init() error {
 		return err
 	}
 	if err = os.Setenv("HOSTNAME", hostname); err != nil {
+		return err
+	}
+	if err = os.Setenv("NEMONKEY", *key); err != nil {
 		return err
 	}
 	return nil

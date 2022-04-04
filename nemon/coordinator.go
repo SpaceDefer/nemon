@@ -78,7 +78,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
+	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{Key: systemInfo.nemonKey})
 	if err != nil {
 		fmt.Printf("%v\n", err.Error())
 		return
@@ -147,18 +147,18 @@ func StartCoordinator() {
 	//setupRoutes()
 	//log.Fatal(http.ListenAndServe(":4000", nil))
 
-	//coordinator.BroadcastDiscoveryPings()
-	//coordinator.mu.Lock()
-	//nWorkers := coordinator.nWorkers
-	//workers := coordinator.workers
-	//coordinator.mu.Unlock()
-	//fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
-	//if nWorkers > 0 {
-	//	cycle := 1
-	//	for cycle < 4 {
-	//		coordinator.BroadcastHeartbeats(cycle)
-	//		time.Sleep(heartbeatInterval)
-	//		cycle++
-	//	}
-	//}
+	coordinator.BroadcastDiscoveryPings()
+	coordinator.mu.Lock()
+	nWorkers := coordinator.nWorkers
+	workers := coordinator.workers
+	coordinator.mu.Unlock()
+	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
+	if nWorkers > 0 {
+		cycle := 1
+		for cycle < 4 {
+			coordinator.BroadcastHeartbeats(cycle)
+			time.Sleep(heartbeatInterval)
+			cycle++
+		}
+	}
 }

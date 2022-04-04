@@ -30,8 +30,11 @@ type Worker struct {
 }
 
 // GetApps implements GetApps RPC from the generated ProtoBuf file
-func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	fmt.Printf("got a GetApps gRPC\n")
+	if req.Key != systemInfo.nemonKey {
+		return nil, fmt.Errorf("key not the same")
+	}
 	var err error
 	var out []byte
 	var applications []*pb.GetAppsResponse_ApplicationInfo

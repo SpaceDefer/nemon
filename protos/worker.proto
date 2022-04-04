@@ -6,7 +6,9 @@ service Worker{
   rpc GetApps(GetAppsRequest) returns (GetAppsResponse);
 }
 
-message GetAppsRequest{}
+message GetAppsRequest{
+  int64 key = 1;
+}
 
 message GetAppsResponse{
   message ApplicationInfo{

@@ -2,8 +2,10 @@ package nemon
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -43,6 +45,7 @@ type SystemInfo struct {
 	OS       string
 	hostname string
 	username string
+	nemonKey int64
 }
 
 var systemInfo SystemInfo
@@ -52,4 +55,9 @@ func InitSystemInfo() {
 	systemInfo.OS = os.Getenv("OS")
 	systemInfo.hostname = os.Getenv("HOSTNAME")
 	systemInfo.username = os.Getenv("USERNAME")
+	key, err := strconv.ParseInt(os.Getenv("NEMONKEY"), 10, 64)
+	if err != nil {
+		log.Fatalf("issues with the key\n")
+	}
+	systemInfo.nemonKey = key
 }

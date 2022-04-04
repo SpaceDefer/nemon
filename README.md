@@ -1,16 +1,10 @@
+# Nemon Server
+![www vaultenc live (2)](https://user-images.githubusercontent.com/63122405/161558819-8db1e929-c6ad-4833-a240-8566bf985fd3.png)
 
-![output-onlinepngtools](https://user-images.githubusercontent.com/63122405/160476270-d64b5f68-2706-4991-bafa-48fe3ef16b56.png)
+Go server for Nemon.
 
-
-# Project Submission for SIH 2022 
-Demo code for SIH 2020 submission. An app(SaaS) to remotely manage all the worker computers on a workstation from the Admin computers.
-
-**Problem Statement :** To track list of software installed in the PC’s / Workstation’s attached to the network. \
-**PS Code :** GR917 \
-**Team Name :** Space_Defer. 
-
-## Setup and run instructions 
-To run this code locally, clone this repository and you can start *coordinator* or *worker* using following commands:
+## Setup and run instructions
+To run this code locally, clone this repository and you can start coordinator or worker using following commands:
 
 Please make sure that the coordinator and worker are connected on the same network(LAN).
 
@@ -18,44 +12,16 @@ To run coordinator :
 ```
 go run main.go --mode coordinator
 ```
-
-To run worker : 
+To run worker :
 ```
 go run main.go --mode worker
 ```
+---
+## Some other commands
 
-Once the coordinator and worker processes are running, the coordinator will send heartbeats to the workers every 10 seconds and gets a list of all the 
-installed apps on the PC using RPCs.
-
-## Video Demo of the Project : 
-
-Worker PC :
-
-
-https://user-images.githubusercontent.com/63122405/160531088-9b1ac07f-16ef-4e7e-b0e4-09ca5f28961e.mov
-
-Coordinator PC :
-
-
-
-https://user-images.githubusercontent.com/55156702/160531252-cbe7b485-def2-490c-8bba-439bbf8d2f77.mov
-
-
-
-## UI Demo of the Project : 
-The following UI prototype can be found [here](https://www.figma.com/proto/GYTEPNoBelBPkCCZvGyrnQ/Dashboard?node-id=214%3A481&scaling=contain&page-id=0%3A1&starting-point-node-id=1%3A6).
-
-![Screenshot 2022-03-29 at 1 17 35 AM](https://user-images.githubusercontent.com/63122405/160475272-032cf8a3-5195-45fc-9829-4974a0aa45e9.png)
-![Screenshot 2022-03-29 at 1 17 16 AM](https://user-images.githubusercontent.com/63122405/160475211-0443ef44-fcd1-46b0-9d9b-b95162ff36d7.png)
-
-
-## Team Details
-* Ujjwal Kadam ( 2019UCS2022 )
-* Tarush Bajaj ( 2019UCS2015 )
-* Tanmay Gairola ( 2019UCS2063 )
-* Neha Yadav ( 2019UCS2008 )
-* Atishek Kumar (2019UCS2027)
-* Anish Chaudhary (2019UCS2050)
-
-> Mentors : Dr. Mohinder Pal Singh Bhatia and Mr. Manu Sheel Gupta
-
+To compile proto files run: 
+```
+protoc --go_out=. --go_opt=paths=source_relative \                    
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    proto/{filename}.proto
+```

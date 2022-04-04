@@ -40,37 +40,39 @@ func reader(conn *websocket.Conn) {
 			log.Println(err)
 			return
 		}
-
 	}
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-
 	fmt.Println(r.Host)
-	CheckOrigin := func(r *http.Request) bool {
-		return true
-	}
-	upgrader.CheckOrigin = CheckOrigin
-
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 	}
+	log.Println("client connected")
 	reader(ws)
 }
 
-func setupRoutes() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Simple Server")
-	})
+func homePage(w http.ResponseWriter, r *http.Request) {
+	_, err := fmt.Fprintf(w, "Simple Server")
+	if err != nil {
+		return
+	}
+}
 
+func setupRoutes() {
+	http.HandleFunc("/", homePage)
 	http.HandleFunc("/ws", serveWs)
 }
 
 func StartServer() {
 	setupRoutes()
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return
-	}
+	go func() {
+		err := http.ListenAndServe(":4000", nil)
+		if err != nil {
+			return
+		}
+	}()
+	log.Println("ws server exited")
 }

@@ -3,8 +3,6 @@ package nemon
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -12,8 +10,7 @@ import (
 	"time"
 
 	pb "nemon/protos"
-
-	"github.com/gorilla/websocket"
+	"nemon/server"
 )
 
 // Coordinator struct implements the coordinator
@@ -23,54 +20,6 @@ type Coordinator struct {
 	allowed  map[string]bool    // list of all allowed applications
 	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
-}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprintf(w, "Home Page")
-	if err != nil {
-		return
-	}
-}
-
-//func reader(conn *websocket.Conn) {
-//	for {
-//		// read in a message
-//		messageType, p, err := conn.ReadJSON()
-//		if err != nil {
-//			log.Println(err)
-//			return
-//		}
-//		// print out that message for clarity
-//		fmt.Println("hehe received")
-//
-//		if err := conn.WriteMessage(messageType, p); err != nil {
-//			log.Println(err)
-//			return
-//		}
-//
-//	}
-//}
-
-func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	_, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-
-	log.Println("Client Connected")
-
-	//reader(ws)
-}
-
-func setupRoutes() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/ws", wsEndpoint)
 }
 
 // SendHeartbeat to a single Worker
@@ -121,6 +70,7 @@ func (c *Coordinator) Cleanup() {
 // StartCoordinator starts up a Coordinator process
 func StartCoordinator() {
 	InitSystemInfo()
+	server.StartServer()
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)

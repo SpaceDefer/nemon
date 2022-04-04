@@ -36,5 +36,5 @@ Set up `goimports` to run on save
 
 - [goland](https://stackoverflow.com/questions/45590236/running-goimports-on-save-in-goland)
 - [vs code](https://hyr.mn/gofmt/)
-- [nvim](https://thoughtbot.com/blog/writing-go-in-vim#:~:text=Formatting%20(on%20save),Hello%2C%20world!%22)%20%7D)
+- [nvim](https://thoughtbot.com/blog/writing-go-in-vim)
     - `let g:go_fmt_autosave = 1`

@@ -40,20 +40,23 @@ func (c *Coordinator) ListenDeleteApplication() {
 			fmt.Println("ch error")
 			continue
 		}
-		fmt.Printf("received an rpc, going to delete %v on %v\n", req.ApplicationName, req.WorkerIp)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		worker := c.workers[req.WorkerIp]
-		if worker == nil {
-			fmt.Printf("didn't find that specific ip\n")
-		}
-		fmt.Printf("worker found %v\n", worker)
-		response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName, Key: systemInfo.nemonKey})
-		if err != nil {
-			log.Fatalf(err.Error())
-			return
-		}
-		fmt.Printf("%v\n", response.Ok)
+		go func(request *DeleteApplicationRequest) {
+			fmt.Printf("received an rpc, going to delete %v on %v\n", req.ApplicationName, req.WorkerIp)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			worker := c.workers[req.WorkerIp]
+			if worker == nil {
+				fmt.Printf("didn't find that specific ip\n")
+				return
+			}
+			fmt.Printf("worker found %v\n", worker)
+			response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName, Key: systemInfo.nemonKey})
+			if err != nil {
+				log.Fatalf(err.Error())
+				return
+			}
+			fmt.Printf("%v\n", response.Ok)
+		}(&req)
 	}
 }
 
@@ -94,7 +97,6 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Printf("heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
 
 	for _, worker := range c.workers {
 		workerActive = make(chan bool)
@@ -164,7 +166,7 @@ func StartCoordinator() {
 	if nWorkers > -1 {
 		cycle := 1
 		for cycle < 20 {
-			// TODO: check and alert non responsive workers 
+			// TODO: check and alert non responsive workers
 			coordinator.BroadcastHeartbeats(cycle)
 			time.Sleep(heartbeatInterval)
 			cycle++

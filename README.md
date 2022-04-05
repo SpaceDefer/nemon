@@ -36,5 +36,6 @@ Set up `goimports` to run on save
 
 - [goland](https://stackoverflow.com/questions/45590236/running-goimports-on-save-in-goland)
 - [vs code](https://hyr.mn/gofmt/)
+  - Install goimports globally using `$ go install golang.org/x/tools/cmd/goimports@latest`
 - [nvim](https://thoughtbot.com/blog/writing-go-in-vim)
-    - `let g:go_fmt_autosave = 1`
+  - `let g:go_fmt_autosave = 1`

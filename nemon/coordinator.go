@@ -26,6 +26,7 @@ type Coordinator struct {
 }
 
 var deleteChan chan DeleteApplicationRequest
+var workerActive chan bool
 
 func Channels() {
 }
@@ -63,7 +64,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{Key: systemInfo.nemonKey})
 	if err != nil {
-		fmt.Printf("%v\n", err.Error())
+		fmt.Printf("Error : %v\n", err.Error())
+
+		// send false to channel to indicate that the worker is down
+		workerActive <- false
 		return
 	}
 	// use the i/o console exclusively
@@ -76,6 +80,12 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 			fmt.Printf("found an app on ip [%v] which isn't allowed: %v\n", worker.ip, app.GetName())
 		}
 	}
+	// send true to channel to indicate that the worker is up
+
+	workerActive <- true
+
+	fmt.Println("heartbeat sent")
+
 }
 
 // BroadcastHeartbeats to multiple workers, cycle signifies the heartbeat cycle
@@ -84,9 +94,21 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Printf("heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+
 	for _, worker := range c.workers {
+		workerActive = make(chan bool)
+
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
 		go c.SendHeartbeat(worker)
+
+		if <-workerActive {
+			fmt.Printf("worker %v is up\n", worker.ip)
+		} else {
+			fmt.Printf("worker %v is down, deleting worker\n", worker.ip)
+			delete(c.workers, worker.ip)
+			c.nWorkers--
+		}
 	}
 }
 

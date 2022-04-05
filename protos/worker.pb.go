@@ -114,6 +114,108 @@ func (x *GetAppsResponse) GetApplications() []*GetAppsResponse_ApplicationInfo {
 	return nil
 }
 
+type DeleteAppsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Key  int64  `protobuf:"varint,2,opt,name=key,proto3" json:"key,omitempty"`
+}
+
+func (x *DeleteAppsRequest) Reset() {
+	*x = DeleteAppsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protos_worker_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeleteAppsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAppsRequest) ProtoMessage() {}
+
+func (x *DeleteAppsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_protos_worker_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAppsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAppsRequest) Descriptor() ([]byte, []int) {
+	return file_protos_worker_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DeleteAppsRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeleteAppsRequest) GetKey() int64 {
+	if x != nil {
+		return x.Key
+	}
+	return 0
+}
+
+type DeleteAppsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+}
+
+func (x *DeleteAppsResponse) Reset() {
+	*x = DeleteAppsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_protos_worker_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeleteAppsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAppsResponse) ProtoMessage() {}
+
+func (x *DeleteAppsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_protos_worker_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAppsResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAppsResponse) Descriptor() ([]byte, []int) {
+	return file_protos_worker_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DeleteAppsResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
 type GetAppsResponse_ApplicationInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -126,7 +228,7 @@ type GetAppsResponse_ApplicationInfo struct {
 func (x *GetAppsResponse_ApplicationInfo) Reset() {
 	*x = GetAppsResponse_ApplicationInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_protos_worker_proto_msgTypes[2]
+		mi := &file_protos_worker_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -139,7 +241,7 @@ func (x *GetAppsResponse_ApplicationInfo) String() string {
 func (*GetAppsResponse_ApplicationInfo) ProtoMessage() {}
 
 func (x *GetAppsResponse_ApplicationInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_protos_worker_proto_msgTypes[2]
+	mi := &file_protos_worker_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -185,12 +287,21 @@ var file_protos_worker_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x6c, 0x6f,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6c, 0x6f,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0x36, 0x0a, 0x06, 0x57, 0x6f, 0x72, 0x6b, 0x65, 0x72,
-	0x12, 0x2c, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x73, 0x12, 0x0f, 0x2e, 0x47, 0x65,
-	0x74, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x10, 0x2e, 0x47,
-	0x65, 0x74, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0d,
-	0x5a, 0x0b, 0x6e, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x6e, 0x65, 0x6d, 0x6f, 0x6e, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x39, 0x0a, 0x11, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e,
+	0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x22, 0x24, 0x0a, 0x12, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x41, 0x70, 0x70, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x6f, 0x6b, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x08, 0x52, 0x02, 0x6f, 0x6b, 0x32, 0x6c, 0x0a, 0x06, 0x57, 0x6f, 0x72, 0x6b, 0x65,
+	0x72, 0x12, 0x2c, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x73, 0x12, 0x0f, 0x2e, 0x47,
+	0x65, 0x74, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x10, 0x2e,
+	0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x34, 0x0a, 0x09, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x41, 0x70, 0x70, 0x12, 0x12, 0x2e, 0x44,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x13, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x41, 0x70, 0x70, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0d, 0x5a, 0x0b, 0x6e, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x6e,
+	0x65, 0x6d, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -205,18 +316,22 @@ func file_protos_worker_proto_rawDescGZIP() []byte {
 	return file_protos_worker_proto_rawDescData
 }
 
-var file_protos_worker_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_protos_worker_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_protos_worker_proto_goTypes = []interface{}{
 	(*GetAppsRequest)(nil),                  // 0: GetAppsRequest
 	(*GetAppsResponse)(nil),                 // 1: GetAppsResponse
-	(*GetAppsResponse_ApplicationInfo)(nil), // 2: GetAppsResponse.ApplicationInfo
+	(*DeleteAppsRequest)(nil),               // 2: DeleteAppsRequest
+	(*DeleteAppsResponse)(nil),              // 3: DeleteAppsResponse
+	(*GetAppsResponse_ApplicationInfo)(nil), // 4: GetAppsResponse.ApplicationInfo
 }
 var file_protos_worker_proto_depIdxs = []int32{
-	2, // 0: GetAppsResponse.applications:type_name -> GetAppsResponse.ApplicationInfo
+	4, // 0: GetAppsResponse.applications:type_name -> GetAppsResponse.ApplicationInfo
 	0, // 1: Worker.GetApps:input_type -> GetAppsRequest
-	1, // 2: Worker.GetApps:output_type -> GetAppsResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
+	2, // 2: Worker.DeleteApp:input_type -> DeleteAppsRequest
+	1, // 3: Worker.GetApps:output_type -> GetAppsResponse
+	3, // 4: Worker.DeleteApp:output_type -> DeleteAppsResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -253,6 +368,30 @@ func file_protos_worker_proto_init() {
 			}
 		}
 		file_protos_worker_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteAppsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protos_worker_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteAppsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_protos_worker_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetAppsResponse_ApplicationInfo); i {
 			case 0:
 				return &v.state
@@ -271,7 +410,7 @@ func file_protos_worker_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_protos_worker_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -3,6 +3,7 @@ package nemon
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,6 +11,9 @@ import (
 	"time"
 
 	pb "nemon/protos"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Coordinator struct implements the coordinator
@@ -21,9 +25,36 @@ type Coordinator struct {
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
 }
 
-// SendDeleteApplication to an individual Worker
-func (c *Coordinator) SendDeleteApplication(application *pb.GetAppsResponse_ApplicationInfo, worker *Worker) {
-	fmt.Println("will delete")
+var deleteChan chan DeleteApplicationRequest
+
+func ClearChannels() {
+	deleteChan = make(chan DeleteApplicationRequest)
+}
+
+// ListenDeleteApplication wrapper for the server to call
+func (c *Coordinator) ListenDeleteApplication() {
+	for {
+		var req DeleteApplicationRequest
+		req, ok := <-deleteChan
+		if !ok {
+			fmt.Println("ch error")
+			continue
+		}
+		fmt.Printf("received an rpc, going to delete %v on %v\n", req.ApplicationName, req.WorkerIp)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		worker := c.workers[req.WorkerIp]
+		if worker == nil {
+			fmt.Printf("didn't find that specific ip\n")
+		}
+		fmt.Printf("worker found %v\n", worker)
+		response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName, Key: systemInfo.nemonKey})
+		if err != nil {
+			log.Fatalf(err.Error())
+			return
+		}
+		fmt.Printf("%v\n", response.Ok)
+	}
 }
 
 // SendHeartbeat to a single Worker
@@ -75,16 +106,17 @@ func (c *Coordinator) Cleanup() {
 func StartCoordinator() {
 	InitSystemInfo()
 	StartServer()
+	ClearChannels()
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//checkError(err)
+	connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	checkError(err)
 	coordinator := Coordinator{
 		workers: map[string]*Worker{
-			//"localhost:8080": {
-			//	connection: connection,
-			//	client:     pb.NewWorkerClient(connection),
-			//	ip:         "localhost",
-			//},
+			"localhost": {
+				connection: connection,
+				client:     pb.NewWorkerClient(connection),
+				ip:         "localhost",
+			},
 		},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
@@ -107,9 +139,10 @@ func StartCoordinator() {
 	workers := coordinator.workers
 	coordinator.mu.Unlock()
 	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
+	go coordinator.ListenDeleteApplication()
 	if nWorkers > -1 {
 		cycle := 1
-		for cycle < 4 {
+		for cycle < 20 {
 			coordinator.BroadcastHeartbeats(cycle)
 			time.Sleep(heartbeatInterval)
 			cycle++

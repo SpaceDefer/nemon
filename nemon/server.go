@@ -29,16 +29,17 @@ func sendMessage(conn *websocket.Conn) {
 
 func reader(conn *websocket.Conn) {
 	for {
-		var req Request
+		var req DeleteApplicationRequest
 		err := conn.ReadJSON(&req)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
+		deleteChan <- req
 		sendMessage(conn)
 
-		reply, err := json.Marshal(&Reply{Ok: true})
+		reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
 		if err != nil {
 			return
 		}
@@ -68,11 +69,13 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// setupRoutes for nemon server
 func setupRoutes() {
 	http.HandleFunc("/", homePage)
 	http.HandleFunc("/ws", serveWs)
 }
 
+// StartServer starts a websocket server
 func StartServer() {
 	setupRoutes()
 	go func() {

@@ -62,11 +62,13 @@ func InitSystemInfo() {
 	systemInfo.nemonKey = key
 }
 
-type Request struct {
+// WebSocket server structs
+
+type DeleteApplicationRequest struct {
 	ApplicationName string `json:"applicationName"`
 	WorkerIp        string `json:"workerIp"`
 }
 
-type Reply struct {
+type DeleteApplicationReply struct {
 	Ok bool `json:"ok"`
 }

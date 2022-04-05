@@ -33,7 +33,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	}
 	client := pb.NewWorkerClient(connection)
 	c.mu.Lock()
-	c.workers[address] = &Worker{ip: ip, connection: connection, client: client}
+	c.workers[ip] = &Worker{ip: ip, connection: connection, client: client}
 	c.nWorkers++
 	c.mu.Unlock()
 

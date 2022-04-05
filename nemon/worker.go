@@ -61,11 +61,19 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 	return response, nil
 }
 
+func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
+	if req.Key != systemInfo.nemonKey {
+		return nil, fmt.Errorf("key not the same\n")
+	}
+	fmt.Printf("deleting %v\n", req.Name)
+	return &pb.DeleteAppsResponse{Ok: true}, nil
+}
+
 // StartWorker handles starting up the worker on the machine
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := ip + port
+	workerAddr := "localhost" + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

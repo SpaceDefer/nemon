@@ -21,10 +21,9 @@ message GetAppsResponse {
 
 message DeleteAppsRequest {
   string name = 1;
-  string ip = 2;
+  int64 key = 2;
 }
 
 message DeleteAppsResponse {
   bool ok = 1;
-  string error = 2;
 }

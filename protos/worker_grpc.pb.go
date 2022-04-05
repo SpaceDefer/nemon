@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WorkerClient interface {
 	GetApps(ctx context.Context, in *GetAppsRequest, opts ...grpc.CallOption) (*GetAppsResponse, error)
+	DeleteApp(ctx context.Context, in *DeleteAppsRequest, opts ...grpc.CallOption) (*DeleteAppsResponse, error)
 }
 
 type workerClient struct {
@@ -38,11 +39,21 @@ func (c *workerClient) GetApps(ctx context.Context, in *GetAppsRequest, opts ...
 	return out, nil
 }
 
+func (c *workerClient) DeleteApp(ctx context.Context, in *DeleteAppsRequest, opts ...grpc.CallOption) (*DeleteAppsResponse, error) {
+	out := new(DeleteAppsResponse)
+	err := c.cc.Invoke(ctx, "/Worker/DeleteApp", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
 type WorkerServer interface {
 	GetApps(context.Context, *GetAppsRequest) (*GetAppsResponse, error)
+	DeleteApp(context.Context, *DeleteAppsRequest) (*DeleteAppsResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -52,6 +63,9 @@ type UnimplementedWorkerServer struct {
 
 func (UnimplementedWorkerServer) GetApps(context.Context, *GetAppsRequest) (*GetAppsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetApps not implemented")
+}
+func (UnimplementedWorkerServer) DeleteApp(context.Context, *DeleteAppsRequest) (*DeleteAppsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteApp not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -84,6 +98,24 @@ func _Worker_GetApps_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_DeleteApp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAppsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).DeleteApp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/DeleteApp",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).DeleteApp(ctx, req.(*DeleteAppsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -94,6 +126,10 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetApps",
 			Handler:    _Worker_GetApps_Handler,
+		},
+		{
+			MethodName: "DeleteApp",
+			Handler:    _Worker_DeleteApp_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

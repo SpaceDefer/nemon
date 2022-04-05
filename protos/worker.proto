@@ -2,18 +2,29 @@ syntax = "proto3";
 
 option go_package = "nemon/nemon";
 
-service Worker{
+service Worker  {
   rpc GetApps(GetAppsRequest) returns (GetAppsResponse);
+  rpc DeleteApp(DeleteAppsRequest) returns (DeleteAppsResponse);
 }
 
-message GetAppsRequest{
+message GetAppsRequest  {
   int64 key = 1;
 }
 
-message GetAppsResponse{
-  message ApplicationInfo{
+message GetAppsResponse {
+  message ApplicationInfo {
     string name = 1;
     string location = 2;
   }
   repeated ApplicationInfo applications = 1;
+}
+
+message DeleteAppsRequest {
+  string name = 1;
+  string ip = 2;
+}
+
+message DeleteAppsResponse {
+  bool ok = 1;
+  string error = 2;
 }

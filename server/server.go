@@ -80,6 +80,6 @@ func StartServer() {
 		if err != nil {
 			return
 		}
+		log.Println("ws server exited")
 	}()
-	log.Println("ws server exited")
 }

@@ -69,8 +69,7 @@ func StartWorker() {
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,
-		systemInfo.username,
-	)
+		systemInfo.username)
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {

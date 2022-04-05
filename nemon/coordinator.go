@@ -102,7 +102,7 @@ func StartCoordinator() {
 	//setupRoutes()
 	//log.Fatal(http.ListenAndServe(":4000", nil))
 
-	coordinator.BroadcastDiscoveryPings()
+	//coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

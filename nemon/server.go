@@ -1,4 +1,4 @@
-package server
+package nemon
 
 import (
 	"encoding/json"

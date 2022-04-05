@@ -10,7 +10,6 @@ import (
 	"time"
 
 	pb "nemon/protos"
-	"nemon/server"
 )
 
 // Coordinator struct implements the coordinator
@@ -75,7 +74,7 @@ func (c *Coordinator) Cleanup() {
 // StartCoordinator starts up a Coordinator process
 func StartCoordinator() {
 	InitSystemInfo()
-	server.StartServer()
+	StartServer()
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)

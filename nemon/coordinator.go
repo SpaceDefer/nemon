@@ -27,8 +27,7 @@ type Coordinator struct {
 
 var deleteChan chan DeleteApplicationRequest
 
-func ClearChannels() {
-	deleteChan = make(chan DeleteApplicationRequest)
+func Channels() {
 }
 
 // ListenDeleteApplication wrapper for the server to call
@@ -106,7 +105,7 @@ func (c *Coordinator) Cleanup() {
 func StartCoordinator() {
 	InitSystemInfo()
 	StartServer()
-	ClearChannels()
+	deleteChan = make(chan DeleteApplicationRequest)
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	checkError(err)
@@ -143,6 +142,7 @@ func StartCoordinator() {
 	if nWorkers > -1 {
 		cycle := 1
 		for cycle < 20 {
+			// TODO: check and alert non responsive workers 
 			coordinator.BroadcastHeartbeats(cycle)
 			time.Sleep(heartbeatInterval)
 			cycle++

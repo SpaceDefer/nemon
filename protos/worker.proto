@@ -17,6 +17,7 @@ message GetAppsResponse {
     string location = 2;
   }
   repeated ApplicationInfo applications = 1;
+  string username = 2;
 }
 
 message DeleteAppsRequest {

@@ -57,7 +57,7 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 	default:
 		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
 	}
-	response := &pb.GetAppsResponse{Applications: applications}
+	response := &pb.GetAppsResponse{Applications: applications, Username: systemInfo.username}
 	return response, nil
 }
 

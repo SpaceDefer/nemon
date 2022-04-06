@@ -11,9 +11,6 @@ import (
 	"time"
 
 	pb "nemon/protos"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Coordinator struct implements the coordinator
@@ -68,6 +65,7 @@ func (c *Coordinator) CheckTimeout(ip string) {
 	if pending >= 3 {
 		// issue an alert
 		fmt.Printf("ip %v hasn't reponsed in ages\n", ip)
+
 	}
 }
 
@@ -75,7 +73,7 @@ func (c *Coordinator) CheckTimeout(ip string) {
 func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -94,7 +92,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	fmt.Printf("app list received from worker %v\n", worker.ip)
 	for _, app := range response.Applications {
 		if !c.allowed[app.GetName()] {
-			fmt.Printf("found an app on ip [%v] which isn't allowed: %v\n", worker.ip, app.GetName())
+			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", response.Username, worker.ip, app.GetName())
 		}
 	}
 	// send true to channel to indicate that the worker is up
@@ -110,8 +108,8 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Print("\033[H\033[2J")
 	fmt.Printf("heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	workers := c.workers
-	c.mu.Unlock()
 
 	for _, worker := range workers {
 		//workerActive = make(chan bool)
@@ -148,15 +146,15 @@ func StartCoordinator() {
 	StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	checkError(err)
+	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//checkError(err)
 	coordinator := Coordinator{
 		workers: map[string]*Worker{
-			"localhost": {
-				connection: connection,
-				client:     pb.NewWorkerClient(connection),
-				ip:         "localhost",
-			},
+			//"localhost": {
+			//	connection: connection,
+			//	client:     pb.NewWorkerClient(connection),
+			//	ip:         "localhost",
+			//},
 		},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
@@ -174,7 +172,7 @@ func StartCoordinator() {
 	//setupRoutes()
 	//log.Fatal(http.ListenAndServe(":4000", nil))
 
-	//coordinator.BroadcastDiscoveryPings()
+	coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

@@ -8,4 +8,5 @@
 - [x] key for a coordinator and the workers with that key respond to that coordinator (high priority)
     - [x] if keys different, blacklist the ip? (maybe)
 - [x] websockets api (high priority)
-- [ ] try to simulate lossy networks for testing (maybe) 
+- [ ] try to simulate lossy networks for testing (med priority)
+- [ ] integrate tls-srp (1password lib) (high priority, but later)

@@ -32,6 +32,19 @@ type Worker struct {
 	hostname   string           // hostname of the Worker
 }
 
+func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
+	if req.Key != systemInfo.nemonKey {
+		return nil, fmt.Errorf("keys not the same, refusing connection")
+	}
+	return &pb.GetSysInfoResponse{
+		WorkerSysInfo: &pb.GetSysInfoResponse_SysInfo{
+			Username: systemInfo.username,
+			Os:       systemInfo.OS,
+			Hostname: systemInfo.hostname,
+		},
+	}, nil
+}
+
 // GetApps implements GetApps RPC from the generated ProtoBuf file
 func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	fmt.Printf("got a GetApps gRPC\n")
@@ -70,7 +83,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := "localhost" + port
+	workerAddr := ip + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

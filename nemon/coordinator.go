@@ -19,17 +19,16 @@ import (
 // Coordinator struct implements the coordinator
 type Coordinator struct {
 	workers  map[string]*Worker // workers map ip addresses to Worker structs
-	nWorkers int                // nWorkers gives the number of workers
+	nWorkers uint               // nWorkers gives the number of workers
 	allowed  map[string]bool    // list of all allowed applications
 	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
 	screenMu sync.Mutex         // screenMu to print on the screen exclusively
+	pending  map[string]uint    // pending checks if a request to a Worker is pending
 }
 
 var deleteChan chan DeleteApplicationRequest
-var workerActive chan bool
 
-func Channels() {
-}
+//var workerActive chan bool
 
 // ListenDeleteApplication wrapper for the server to call
 func (c *Coordinator) ListenDeleteApplication() {
@@ -60,19 +59,34 @@ func (c *Coordinator) ListenDeleteApplication() {
 	}
 }
 
+// CheckTimeout checks if a Worker hasn't responded to 3 or more consecutive heartbeats
+func (c *Coordinator) CheckTimeout(ip string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	pending := c.pending[ip]
+	if pending >= 3 {
+		// issue an alert
+		fmt.Printf("ip %v hasn't reponsed in ages\n", ip)
+	}
+}
+
 // SendHeartbeat to a single Worker
 func (c *Coordinator) SendHeartbeat(worker *Worker) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{Key: systemInfo.nemonKey})
 	if err != nil {
-		fmt.Printf("Error : %v\n", err.Error())
-
+		fmt.Printf("%v\n", err.Error())
 		// send false to channel to indicate that the worker is down
-		workerActive <- false
+		//workerActive <- false
 		return
 	}
+	c.pending[worker.ip]--
 	// use the i/o console exclusively
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
@@ -85,7 +99,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	}
 	// send true to channel to indicate that the worker is up
 
-	workerActive <- true
+	//workerActive <- true
 
 	fmt.Println("heartbeat sent")
 
@@ -96,21 +110,24 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Print("\033[H\033[2J")
 	fmt.Printf("heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	workers := c.workers
+	c.mu.Unlock()
 
-	for _, worker := range c.workers {
-		workerActive = make(chan bool)
+	for _, worker := range workers {
+		//workerActive = make(chan bool)
 
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
+		c.pending[worker.ip]++
 		go c.SendHeartbeat(worker)
+		go c.CheckTimeout(worker.ip)
 
-		if <-workerActive {
-			fmt.Printf("worker %v is up\n", worker.ip)
-		} else {
-			fmt.Printf("worker %v is down, deleting worker\n", worker.ip)
-			delete(c.workers, worker.ip)
-			c.nWorkers--
-		}
+		//if <-workerActive {
+		//	fmt.Printf("worker %v is up\n", worker.ip)
+		//} else {
+		//	fmt.Printf("worker %v is down, deleting worker\n", worker.ip)
+		//	delete(c.workers, worker.ip)
+		//	c.nWorkers--
+		//}
 	}
 }
 
@@ -143,6 +160,7 @@ func StartCoordinator() {
 		},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
+		pending:  map[string]uint{},
 	}
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
@@ -163,7 +181,7 @@ func StartCoordinator() {
 	coordinator.mu.Unlock()
 	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
 	go coordinator.ListenDeleteApplication()
-	if nWorkers > -1 {
+	if nWorkers >= 0 {
 		cycle := 1
 		for cycle < 20 {
 			// TODO: check and alert non responsive workers

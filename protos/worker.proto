@@ -4,12 +4,24 @@ option go_package = "nemon/nemon";
 
 service Worker  {
   rpc GetApps(GetAppsRequest) returns (GetAppsResponse);
+  rpc GetSysInfo(GetSysInfoRequest) returns (GetSysInfoResponse);
   rpc DeleteApp(DeleteAppsRequest) returns (DeleteAppsResponse);
 }
 
-message GetAppsRequest  {
+message GetSysInfoRequest {
   int64 key = 1;
 }
+
+message GetSysInfoResponse {
+  message SysInfo {
+    string username = 1;
+    string hostname = 2;
+    string os = 3;
+  }
+  SysInfo workerSysInfo = 1;
+}
+
+message GetAppsRequest  {}
 
 message GetAppsResponse {
   message ApplicationInfo {
@@ -22,7 +34,6 @@ message GetAppsResponse {
 
 message DeleteAppsRequest {
   string name = 1;
-  int64 key = 2;
 }
 
 message DeleteAppsResponse {

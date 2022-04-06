@@ -1,7 +1,9 @@
 package nemon
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -32,8 +34,29 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		return
 	}
 	client := pb.NewWorkerClient(connection)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	response, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{Key: systemInfo.nemonKey})
+	if err != nil {
+		log.Printf("%v\n", err)
+		err := connection.Close()
+		if err != nil {
+			fmt.Printf("can't close connection\n")
+		}
+		return
+	}
+	workerSysInfo := response.WorkerSysInfo
 	c.mu.Lock()
-	c.workers[ip] = &Worker{ip: ip, connection: connection, client: client}
+	c.workers[ip] = &Worker{
+		ip:         ip,
+		connection: connection,
+		client:     client,
+		username:   workerSysInfo.Username,
+		os:         workerSysInfo.Os,
+		hostname:   workerSysInfo.Hostname,
+	}
 	c.nWorkers++
 	c.mu.Unlock()
 

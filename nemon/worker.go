@@ -27,14 +27,14 @@ type Worker struct {
 	ip         string           // ip address of the worker connected
 	client     pb.WorkerClient  // client API exposed for the Coordinator
 	connection *grpc.ClientConn // connection to the worker
+	username   string           // username of the Worker
+	os         string           // os of the Worker
+	hostname   string           // hostname of the Worker
 }
 
 // GetApps implements GetApps RPC from the generated ProtoBuf file
 func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	fmt.Printf("got a GetApps gRPC\n")
-	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("key not the same")
-	}
 	var err error
 	var out []byte
 	var applications []*pb.GetAppsResponse_ApplicationInfo
@@ -62,9 +62,6 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 }
 
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
-	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("key not the same\n")
-	}
 	fmt.Printf("deleting %v\n", req.Name)
 	return &pb.DeleteAppsResponse{Ok: true}, nil
 }

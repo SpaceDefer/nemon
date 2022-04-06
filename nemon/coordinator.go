@@ -46,7 +46,7 @@ func (c *Coordinator) ListenDeleteApplication() {
 				return
 			}
 			fmt.Printf("worker found %v\n", worker)
-			response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName, Key: systemInfo.nemonKey})
+			response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName})
 			if err != nil {
 				log.Fatalf(err.Error())
 				return
@@ -57,14 +57,14 @@ func (c *Coordinator) ListenDeleteApplication() {
 }
 
 // CheckTimeout checks if a Worker hasn't responded to 3 or more consecutive heartbeats
-func (c *Coordinator) CheckTimeout(ip string) {
+func (c *Coordinator) CheckTimeout(ip string, name string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	pending := c.pending[ip]
 	if pending >= 3 {
 		// issue an alert
-		fmt.Printf("ip %v hasn't reponsed in ages\n", ip)
+		fmt.Printf("%v's computer at ip %v hasn't reponsed in ages\n", name, ip)
 
 	}
 }
@@ -77,7 +77,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{Key: systemInfo.nemonKey})
+	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
 	if err != nil {
 		fmt.Printf("%v\n", err.Error())
 		// send false to channel to indicate that the worker is down
@@ -117,7 +117,7 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
 		c.pending[worker.ip]++
 		go c.SendHeartbeat(worker)
-		go c.CheckTimeout(worker.ip)
+		go c.CheckTimeout(worker.ip, worker.username)
 
 		//if <-workerActive {
 		//	fmt.Printf("worker %v is up\n", worker.ip)

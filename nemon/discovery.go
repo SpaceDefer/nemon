@@ -1,15 +1,11 @@
 package nemon
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
-
-	pb "nemon/protos"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -33,20 +29,19 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		fmt.Printf("error occured %v\n", err.Error())
 		return
 	}
-	client := pb.NewWorkerClient(connection)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	response, client, err := c.Handshake(connection)
 
-	response, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{Key: systemInfo.nemonKey})
 	if err != nil {
-		log.Printf("%v\n", err)
-		err := connection.Close()
-		if err != nil {
-			fmt.Printf("can't close connection\n")
+		fmt.Printf("handshake was unsuccessful with %v\n", ip)
+		if err := connection.Close(); err != nil {
+			return
 		}
+		fmt.Println(err.Error())
 		return
 	}
+
+	fmt.Printf("handshake was successful with %v\n", ip)
 	workerSysInfo := response.WorkerSysInfo
 	c.mu.Lock()
 	c.workers[ip] = &Worker{

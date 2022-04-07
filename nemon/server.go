@@ -16,7 +16,7 @@ var upgrader = websocket.Upgrader{
 
 func sendMessage(conn *websocket.Conn) {
 	var err error
-	msg := `Hi, the handshake is complete!`
+	msg := `Hi, the Handshake is complete!`
 
 	if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
 		log.Println(err)

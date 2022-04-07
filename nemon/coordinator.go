@@ -3,7 +3,6 @@ package nemon
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -24,6 +23,7 @@ type Coordinator struct {
 }
 
 var deleteChan chan DeleteApplicationRequest
+var wsServer *WebsocketServer
 
 //var workerActive chan bool
 
@@ -48,7 +48,7 @@ func (c *Coordinator) ListenDeleteApplication() {
 			fmt.Printf("worker found %v\n", worker)
 			response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName})
 			if err != nil {
-				log.Fatalf(err.Error())
+				fmt.Println(err.Error())
 				return
 			}
 			fmt.Printf("%v\n", response.Ok)
@@ -57,15 +57,15 @@ func (c *Coordinator) ListenDeleteApplication() {
 }
 
 // CheckTimeout checks if a Worker hasn't responded to 3 or more consecutive heartbeats
-func (c *Coordinator) CheckTimeout(ip string, name string) {
+func (c *Coordinator) CheckTimeout(ip string, username string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	pending := c.pending[ip]
 	if pending >= 3 {
 		// issue an alert
-		fmt.Printf("%v's computer at ip %v hasn't reponsed in ages\n", name, ip)
-
+		fmt.Printf("%v's computer hasn't reponsed in ages\n", ip)
+		wsServer.sendAlert(fmt.Sprintf("%v's computer at IP %v hasn't responsed in ages!", username, ip))
 	}
 }
 
@@ -80,12 +80,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
 	if err != nil {
 		fmt.Printf("%v\n", err.Error())
-		// send false to channel to indicate that the worker is down
-		//workerActive <- false
 		return
 	}
 	c.pending[worker.ip]--
-	// use the i/o console exclusively
+
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
 
@@ -95,9 +93,6 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", response.Username, worker.ip, app.GetName())
 		}
 	}
-	// send true to channel to indicate that the worker is up
-
-	//workerActive <- true
 
 	fmt.Println("heartbeat sent")
 
@@ -112,20 +107,10 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	workers := c.workers
 
 	for _, worker := range workers {
-		//workerActive = make(chan bool)
-
 		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
 		c.pending[worker.ip]++
 		go c.SendHeartbeat(worker)
 		go c.CheckTimeout(worker.ip, worker.username)
-
-		//if <-workerActive {
-		//	fmt.Printf("worker %v is up\n", worker.ip)
-		//} else {
-		//	fmt.Printf("worker %v is down, deleting worker\n", worker.ip)
-		//	delete(c.workers, worker.ip)
-		//	c.nWorkers--
-		//}
 	}
 }
 
@@ -143,7 +128,8 @@ func (c *Coordinator) Cleanup() {
 // StartCoordinator starts up a Coordinator process
 func StartCoordinator() {
 	InitSystemInfo()
-	StartServer()
+	wsServer = &WebsocketServer{}
+	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -160,6 +146,8 @@ func StartCoordinator() {
 		allowed:  map[string]bool{},
 		pending:  map[string]uint{},
 	}
+
+	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {
@@ -168,9 +156,6 @@ func StartCoordinator() {
 		coordinator.Cleanup()
 		os.Exit(1)
 	}()
-	//
-	//setupRoutes()
-	//log.Fatal(http.ListenAndServe(":4000", nil))
 
 	coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()

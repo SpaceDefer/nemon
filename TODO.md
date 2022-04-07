@@ -10,3 +10,5 @@
 - [x] websockets api (high priority)
 - [ ] try to simulate lossy networks for testing (med priority)
 - [ ] integrate tls-srp (1password lib) (high priority, but later)
+- [x] push an alert over websockets on an alert (high)
+- [ ] way to close the server?

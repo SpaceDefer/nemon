@@ -5,64 +5,78 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
+
+type WebsocketServer struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
 
-func sendMessage(conn *websocket.Conn) {
+func (ws *WebsocketServer) sendAlert(msg string) {
 	var err error
-	msg := `Hi, the Handshake is complete!`
 
+	ws.mu.Lock()
+	conn := ws.conn
+	ws.mu.Unlock()
+
+	if conn == nil {
+		fmt.Printf("no client to send data to\n")
+		return
+	}
 	if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
 		log.Println(err)
 		return
 	} else {
-		fmt.Println("Message sent")
+		fmt.Println("message sent")
 	}
 
 }
 
-func reader(conn *websocket.Conn) {
+func (ws *WebsocketServer) reader() {
 	for {
 		var req DeleteApplicationRequest
-		err := conn.ReadJSON(&req)
+		err := ws.conn.ReadJSON(&req)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
 		deleteChan <- req
-		sendMessage(conn)
-
 		reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
 		if err != nil {
 			return
 		}
 
-		if err := conn.WriteMessage(websocket.TextMessage, reply); err != nil {
+		if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
 			log.Println(err)
 			return
 		}
 	}
 }
 
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func (ws *WebsocketServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Host)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	ws, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("client connected")
-	reader(ws)
+	ws.mu.Lock()
+	ws.conn = conn
+	ws.mu.Unlock()
+	ws.reader()
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
+func (ws *WebsocketServer) homePage(w http.ResponseWriter, _ *http.Request) {
 	_, err := fmt.Fprintf(w, "Simple Server")
 	if err != nil {
 		return
@@ -70,14 +84,14 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 // setupRoutes for nemon server
-func setupRoutes() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/ws", serveWs)
+func (ws *WebsocketServer) setupRoutes() {
+	http.HandleFunc("/", ws.homePage)
+	http.HandleFunc("/ws", ws.serveWs)
 }
 
 // StartServer starts a websocket server
-func StartServer() {
-	setupRoutes()
+func (ws *WebsocketServer) StartServer() {
+	ws.setupRoutes()
 	go func() {
 		err := http.ListenAndServe(":4000", nil)
 		if err != nil {

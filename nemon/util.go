@@ -116,13 +116,18 @@ type DeleteApplicationRequest struct {
 	WorkerIp        string `json:"workerIp"`
 }
 
-type ApplicationList []ApplicationInfo
-
-type ApplicationInfo struct{
+type ApplicationInfo struct {
 	ApplicationName string `json:"applicationName"`
-	Location string `json:"location"`
+	Location        string `json:"location"`
 }
 
+type WorkerInfo struct {
+	ApplicationList []ApplicationInfo `json:"applicationList"`
+	WorkerIp        string            `json:"workerIp"`
+	Username        string            `json:"username"`
+	Hostname        string            `json:"hostname"`
+	Os              string            `json:"os"`
+}
 
 type DeleteApplicationReply struct {
 	Ok bool `json:"ok"`

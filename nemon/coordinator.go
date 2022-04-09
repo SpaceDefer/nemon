@@ -106,7 +106,13 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 		}
 	}
 
-	wsServer.sendAppList(ApplicationList)
+	wsServer.sendAppList(&WorkerInfo{
+		ApplicationList: ApplicationList,
+		WorkerIp:        worker.ip,
+		Username:        worker.username,
+		Hostname:        worker.hostname,
+		Os:              worker.os,
+	})
 
 	fmt.Println("heartbeat sent")
 

@@ -54,7 +54,7 @@ func (ws *WebsocketServer) Cleanup() {
 	}
 }
 
-func (ws *WebsocketServer) sendAppList(list ApplicationList) {
+func (ws *WebsocketServer) sendAppList(workerInfo *WorkerInfo) {
 	var err error
 
 	ws.mu.Lock()
@@ -66,7 +66,7 @@ func (ws *WebsocketServer) sendAppList(list ApplicationList) {
 		return
 	}
 
-	reply, err := json.Marshal(&list)
+	reply, err := json.Marshal(workerInfo)
 	if err != nil {
 		return
 	}
@@ -84,20 +84,22 @@ func (ws *WebsocketServer) reader() {
 		err := ws.conn.ReadJSON(&req)
 		if err != nil {
 			log.Println(err)
+			ws.mu.Lock()
 			ws.conn.Close()
+			ws.mu.Unlock()
 			break
 		}
 		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
-		// deleteChan <- req
-		// reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
-		// if err != nil {
-		// 	return
-		// }
+		deleteChan <- req
+		reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
+		if err != nil {
+			return
+		}
 
-		// if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
-		// 	log.Println(err)
-		// 	return
-		// }
+		if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 }
 

@@ -40,6 +40,39 @@ func (ws *WebsocketServer) sendAlert(msg string) {
 
 }
 
+
+func (ws *WebsocketServer) sendAppList(list ApplicationList) {
+	var err error
+
+	ws.mu.Lock()
+	conn := ws.conn
+	ws.mu.Unlock()
+
+	if conn == nil {
+		fmt.Printf("no client found\n")
+		return
+	}
+
+	one := ApplicationInfo{ApplicationName: "discord", Location : "Desktop/discord.dmg"}
+	two := ApplicationInfo{ApplicationName: "spotify", Location : "Desktop/spotify.dmg"}
+
+	var ApplicationList []ApplicationInfo
+	ApplicationList = append(ApplicationList, one)
+	ApplicationList = append(ApplicationList, two)
+
+	reply, err := json.Marshal(list)
+	if err != nil {
+			return
+	}
+
+	if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
+		log.Println(err)
+		return
+	}
+
+}
+
+
 func (ws *WebsocketServer) reader() {
 	for {
 		var req DeleteApplicationRequest

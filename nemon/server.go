@@ -46,7 +46,8 @@ func (ws *WebsocketServer) reader() {
 		err := ws.conn.ReadJSON(&req)
 		if err != nil {
 			log.Println(err)
-			return
+			ws.conn.Close()
+			break
 		}
 		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
 		deleteChan <- req
@@ -68,6 +69,7 @@ func (ws *WebsocketServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	log.Println("client connected")
 	ws.mu.Lock()

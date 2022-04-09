@@ -2,12 +2,17 @@ package nemon
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha512"
 	"fmt"
 	"log"
+	"math/big"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -36,12 +41,38 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 	if req.Key != systemInfo.nemonKey {
 		return nil, fmt.Errorf("keys not the same, refusing connection")
 	}
+
+	var publicKey rsa.PublicKey
+
+	publicKeyN := new(big.Int)
+	var val string
+	val = req.PublicKeyN
+	publicKeyN.SetString(val, 10)
+	publicKey.N = publicKeyN
+	publicKey.E, _ = strconv.Atoi(req.PublicKeyE)
+	AESKey := make([]byte, 64)
+
+	_, err := rand.Read(AESKey)
+
+	if err != nil {
+		return nil, err
+	}
+	
+	systemInfo.AESKey = AESKey
+
+	hash := sha512.New()
+	encAESKey, err := rsa.EncryptOAEP(hash, rand.Reader, &publicKey, AESKey, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.GetSysInfoResponse{
 		WorkerSysInfo: &pb.GetSysInfoResponse_SysInfo{
 			Username: systemInfo.username,
 			Os:       systemInfo.OS,
 			Hostname: systemInfo.hostname,
 		},
+		AESKey: encAESKey,
 	}, nil
 }
 
@@ -83,7 +114,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := ip + port
+	workerAddr := "localhost" + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

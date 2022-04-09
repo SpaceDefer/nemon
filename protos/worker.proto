@@ -10,6 +10,8 @@ service Worker  {
 
 message GetSysInfoRequest {
   int64 key = 1;
+  string publicKeyN = 2;
+  string publicKeyE = 3;
 }
 
 message GetSysInfoResponse {
@@ -19,6 +21,7 @@ message GetSysInfoResponse {
     string os = 3;
   }
   SysInfo workerSysInfo = 1;
+  bytes AESKey = 2;
 }
 
 message GetAppsRequest  {}

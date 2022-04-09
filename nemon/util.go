@@ -46,6 +46,7 @@ type SystemInfo struct {
 	hostname string
 	username string
 	nemonKey int64
+	AESKey   []byte
 }
 
 var systemInfo SystemInfo

@@ -135,17 +135,16 @@ func StartCoordinator() {
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)
 	coordinator := Coordinator{
-		workers: map[string]*Worker{
-			//"localhost": {
-			//	connection: connection,
-			//	client:     pb.NewWorkerClient(connection),
-			//	ip:         "localhost",
-			//},
-		},
+		workers:  map[string]*Worker{},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
 		pending:  map[string]uint{},
 	}
+
+	//coordinator.Handshake(connection)
+	//if err != nil {
+	//	return
+	//}
 
 	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)
@@ -157,7 +156,7 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
-	coordinator.BroadcastDiscoveryPings()
+	//coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

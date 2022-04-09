@@ -97,10 +97,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	var ApplicationList []ApplicationInfo
 
 	for _, app := range response.Applications {
-		if !c.allowed[string(app.GetName())] {
-			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", string(response.Username), worker.ip, string(app.GetName()))
+		if !c.allowed[string(decrypt(app.GetName()))] {
+			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", string(decrypt(response.Username)), worker.ip, string(decrypt(app.GetName())))
 
-			app := ApplicationInfo{ApplicationName: string(app.GetName()), Location: string(app.GetLocation())}
+			app := ApplicationInfo{ApplicationName: string(decrypt(app.GetName())), Location: string(decrypt(app.GetLocation()))}
 
 			ApplicationList = append(ApplicationList, app)
 		}

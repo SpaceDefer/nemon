@@ -53,14 +53,7 @@ func (ws *WebsocketServer) sendAppList(list ApplicationList) {
 		return
 	}
 
-	one := ApplicationInfo{ApplicationName: "discord", Location : "Desktop/discord.dmg"}
-	two := ApplicationInfo{ApplicationName: "spotify", Location : "Desktop/spotify.dmg"}
-
-	var ApplicationList []ApplicationInfo
-	ApplicationList = append(ApplicationList, one)
-	ApplicationList = append(ApplicationList, two)
-
-	reply, err := json.Marshal(list)
+	reply, err := json.Marshal(&list)
 	if err != nil {
 			return
 	}
@@ -83,16 +76,16 @@ func (ws *WebsocketServer) reader() {
 			break
 		}
 		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
-		deleteChan <- req
-		reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
-		if err != nil {
-			return
-		}
+		// deleteChan <- req
+		// reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
+		// if err != nil {
+		// 	return
+		// }
 
-		if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
-			log.Println(err)
-			return
-		}
+		// if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
 	}
 }
 

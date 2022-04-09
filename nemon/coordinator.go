@@ -164,6 +164,7 @@ func StartCoordinator() {
 		<-sigCh
 		fmt.Printf("\ncoordinator exiting gracefully...\n")
 		coordinator.Cleanup()
+		wsServer.Cleanup()
 		os.Exit(1)
 	}()
 

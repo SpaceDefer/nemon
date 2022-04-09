@@ -40,6 +40,19 @@ func (ws *WebsocketServer) sendAlert(msg string) {
 
 }
 
+func (ws *WebsocketServer) Cleanup() {
+	ws.mu.Lock()
+	ws.mu.Unlock()
+	fmt.Printf("websocket server exiting gracefully...\n")
+	if ws.conn == nil {
+		return
+	}
+	err := ws.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		log.Println("Error during closing websocket:", err)
+		return
+	}
+}
 
 func (ws *WebsocketServer) sendAppList(list ApplicationList) {
 	var err error
@@ -55,7 +68,7 @@ func (ws *WebsocketServer) sendAppList(list ApplicationList) {
 
 	reply, err := json.Marshal(&list)
 	if err != nil {
-			return
+		return
 	}
 
 	if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
@@ -64,7 +77,6 @@ func (ws *WebsocketServer) sendAppList(list ApplicationList) {
 	}
 
 }
-
 
 func (ws *WebsocketServer) reader() {
 	for {

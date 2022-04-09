@@ -141,24 +141,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 // StartWorker handles starting up the worker on the machine
 func StartWorker() {
 	InitSystemInfo()
-	ip := ""
-
-	addrs, err := net.InterfaceAddrs()
-
-    if err != nil {
-        fmt.Println(err)
-    }
-	
-    for _, address := range addrs {
-        if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-            if ipnet.IP.To4() != nil {
-				addrStr := ipnet.IP.String()
-                if strings.Split(addrStr,".")[0] == "192" {
-					ip = addrStr
-				}
-            }
-        }
-    }
+	ip := GetLocalIP()
 
 	workerAddr := ip + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",

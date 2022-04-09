@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"strings"
 )
 
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
@@ -26,18 +27,23 @@ func checkError(err error) {
 
 // GetLocalIP gets the IP address on the connection
 func GetLocalIP() string {
-	addresses, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addresses {
-		// check the address type and if it is not a loop-back the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
+
+	addrs, err := net.InterfaceAddrs()
+
+    if err != nil {
+        fmt.Println(err)
+    }
+	
+    for _, address := range addrs {
+        if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+            if ipnet.IP.To4() != nil {
+				addrStr := ipnet.IP.String()
+                if strings.Split(addrStr,".")[0] == "192" {
+					return addrStr
+				}
+            }
+        }
+    }
 	return ""
 }
 

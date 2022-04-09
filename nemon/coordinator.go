@@ -91,11 +91,20 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	defer c.screenMu.Unlock()
 
 	fmt.Printf("app list received from worker %v\n", worker.ip)
+	
+	var ApplicationList []ApplicationInfo
+
 	for _, app := range response.Applications {
 		if !c.allowed[app.GetName()] {
 			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", response.Username, worker.ip, app.GetName())
+
+			app := ApplicationInfo{ApplicationName: app.GetName(), Location : app.GetLocation()}
+
+			ApplicationList = append(ApplicationList, app)
 		}
 	}
+	
+	wsServer.sendAppList(ApplicationList)
 
 	fmt.Println("heartbeat sent")
 

@@ -114,7 +114,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := ip + port
+	workerAddr := "localhost" + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

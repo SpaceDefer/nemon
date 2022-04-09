@@ -1,6 +1,8 @@
 package nemon
 
 import (
+	"bytes"
+	"crypto/cipher"
 	"fmt"
 	"log"
 	"net"
@@ -42,11 +44,12 @@ func GetLocalIP() string {
 // SystemInfo contains frequently required information about the system on which
 // the software is running
 type SystemInfo struct {
-	OS       string
-	hostname string
-	username string
-	nemonKey int64
-	AESKey   []byte
+	OS        string
+	hostname  string
+	username  string
+	nemonKey  int64
+	AESKey    []byte
+	AESCipher cipher.Block
 }
 
 var systemInfo SystemInfo
@@ -61,6 +64,49 @@ func InitSystemInfo() {
 		log.Fatalf("issues with the key\n")
 	}
 	systemInfo.nemonKey = key
+}
+
+// encrypt returns an AES encrypted byte array
+func encrypt(plaintext []byte) []byte {
+	c := systemInfo.AESCipher
+
+	if c == nil {
+		return nil
+	}
+	blockSize := c.BlockSize()
+	data := PKCS5Padding(plaintext, blockSize)
+	enc := make([]byte, len(data))
+
+	c.Encrypt(enc, data)
+	return enc
+}
+
+// decrypt returns an AES decrypted byte array
+func decrypt(ciphertext []byte) []byte {
+	c := systemInfo.AESCipher
+
+	if c == nil {
+		return nil
+	}
+
+	dec := make([]byte, len(ciphertext))
+
+	c.Decrypt(dec, ciphertext)
+
+	data := PKCS5UnPadding(dec)
+	return data
+}
+
+func PKCS5Padding(src []byte, blockSize int) []byte {
+	padding := blockSize - len(src)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(src, padtext...)
+}
+
+func PKCS5UnPadding(src []byte) []byte {
+	length := len(src)
+	unpadding := int(src[length-1])
+	return src[:(length - unpadding)]
 }
 
 // WebSocket server structs

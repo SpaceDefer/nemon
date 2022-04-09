@@ -48,13 +48,12 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		ip:         ip,
 		connection: connection,
 		client:     client,
-		username:   workerSysInfo.Username,
-		os:         workerSysInfo.Os,
-		hostname:   workerSysInfo.Hostname,
+		username:   string(decrypt(workerSysInfo.Username)),
+		os:         string(decrypt(workerSysInfo.Os)),
+		hostname:   string(decrypt(workerSysInfo.Hostname)),
 	}
 	c.nWorkers++
 	c.mu.Unlock()
-
 }
 
 // BroadcastDiscoveryPings to available IP addresses on the network

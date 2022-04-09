@@ -2,6 +2,7 @@ package nemon
 
 import (
 	"context"
+	"crypto/aes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -45,6 +46,13 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	hash := sha512.New()
 	AESKey, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, response.AESKey, nil)
 
+	AESCipher, err := aes.NewCipher(AESKey)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	systemInfo.AESCipher = AESCipher
 	systemInfo.AESKey = AESKey
 
 	if err != nil {

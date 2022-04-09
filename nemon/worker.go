@@ -2,6 +2,7 @@ package nemon
 
 import (
 	"context"
+	"crypto/aes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -50,7 +51,7 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 	publicKeyN.SetString(val, 10)
 	publicKey.N = publicKeyN
 	publicKey.E, _ = strconv.Atoi(req.PublicKeyE)
-	AESKey := make([]byte, 64)
+	AESKey := make([]byte, 32)
 
 	_, err := rand.Read(AESKey)
 
@@ -58,6 +59,13 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 		return nil, err
 	}
 
+	AESCipher, err := aes.NewCipher(AESKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	systemInfo.AESCipher = AESCipher
 	systemInfo.AESKey = AESKey
 
 	hash := sha512.New()
@@ -68,9 +76,9 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 
 	return &pb.GetSysInfoResponse{
 		WorkerSysInfo: &pb.GetSysInfoResponse_SysInfo{
-			Username: systemInfo.username,
-			Os:       systemInfo.OS,
-			Hostname: systemInfo.hostname,
+			Username: encrypt([]byte(systemInfo.username)),
+			Os:       encrypt([]byte(systemInfo.OS)),
+			Hostname: encrypt([]byte(systemInfo.hostname)),
 		},
 		AESKey: encAESKey,
 	}, nil
@@ -91,7 +99,10 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 		for _, str := range r {
 			if len(str) > 0 {
 				toAppend := strings.Split(str, "/")
-				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{Name: toAppend[len(toAppend)-1], Location: str})
+				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{
+					Name:     encrypt([]byte(toAppend[len(toAppend)-1])),
+					Location: encrypt([]byte(str)),
+				})
 			}
 		}
 	case "windows":
@@ -101,7 +112,10 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 	default:
 		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
 	}
-	response := &pb.GetAppsResponse{Applications: applications, Username: systemInfo.username}
+	response := &pb.GetAppsResponse{
+		Applications: applications,
+		Username:     encrypt([]byte(systemInfo.username)),
+	}
 	return response, nil
 }
 
@@ -114,11 +128,12 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := ip + port
+	workerAddr := "localhost" + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,
-		systemInfo.username)
+		systemInfo.username,
+	)
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {

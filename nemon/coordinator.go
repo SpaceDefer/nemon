@@ -10,9 +10,6 @@ import (
 	"time"
 
 	pb "nemon/protos"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Coordinator struct implements the coordinator
@@ -49,7 +46,12 @@ func (c *Coordinator) ListenDeleteApplication() {
 				return
 			}
 			fmt.Printf("worker found %v\n", worker)
-			response, err := worker.client.DeleteApp(ctx, &pb.DeleteAppsRequest{Name: req.ApplicationName})
+			response, err := worker.client.DeleteApp(
+				ctx,
+				&pb.DeleteAppsRequest{
+					Name: encrypt([]byte(req.ApplicationName)),
+				},
+			)
 			if err != nil {
 				fmt.Println(err.Error())
 				return
@@ -92,8 +94,8 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 
 	fmt.Printf("app list received from worker %v\n", worker.ip)
 	for _, app := range response.Applications {
-		if !c.allowed[app.GetName()] {
-			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", response.Username, worker.ip, app.GetName())
+		if !c.allowed[string(decrypt(app.GetName()))] {
+			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", string(decrypt(response.Username)), worker.ip, string(decrypt(app.GetName())))
 		}
 	}
 
@@ -135,25 +137,16 @@ func StartCoordinator() {
 	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	checkError(err)
+	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//checkError(err)
 	coordinator := Coordinator{
-		workers: map[string]*Worker{
-			"localhost": {
-				connection: connection,
-				client:     pb.NewWorkerClient(connection),
-				ip:         "localhost",
-			},
-		},
+		workers:  map[string]*Worker{},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
 		pending:  map[string]uint{},
 	}
 
-	//coordinator.Handshake(connection)
-	//if err != nil {
-	//	return
-	//}
+	coordinator.SendDiscoveryPing("localhost")
 
 	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)

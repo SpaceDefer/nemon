@@ -19,7 +19,7 @@ import (
 func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
 	client := pb.NewWorkerClient(connection)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -35,6 +35,12 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 		PublicKeyN: publicKey.N.String(),
 		PublicKeyE: strconv.Itoa(publicKey.E),
 	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fmt.Printf("%v\n", response)
 
 	hash := sha512.New()
 	AESKey, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, response.AESKey, nil)

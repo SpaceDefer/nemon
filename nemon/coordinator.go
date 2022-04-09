@@ -10,6 +10,9 @@ import (
 	"time"
 
 	pb "nemon/protos"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Coordinator struct implements the coordinator
@@ -132,10 +135,16 @@ func StartCoordinator() {
 	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
 	fmt.Printf("%v started as a coordinator\n", os.Getpid())
-	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//checkError(err)
+	connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	checkError(err)
 	coordinator := Coordinator{
-		workers:  map[string]*Worker{},
+		workers: map[string]*Worker{
+			"localhost": {
+				connection: connection,
+				client:     pb.NewWorkerClient(connection),
+				ip:         "localhost",
+			},
+		},
 		nWorkers: 0,
 		allowed:  map[string]bool{},
 		pending:  map[string]uint{},

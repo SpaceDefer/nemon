@@ -57,7 +57,7 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	systemInfo.AESKey = AESKey
 
 	hash := sha512.New()
@@ -114,7 +114,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := "localhost" + port
+	workerAddr := ip + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

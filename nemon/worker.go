@@ -106,7 +106,21 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 			}
 		}
 	case "windows":
-		//out, err = exec.Command("powershell", "-noprofile", "Get-WmiObject").Output()
+		pwd, err := os.Getwd()
+		checkError(err)
+		out, err := exec.Command("python",pwd+"\\nemon\\scripts\\getAppListWindows.py").Output()
+		checkError(err)
+		list := string(out)
+		res := strings.Split(list,"\n")
+		for i:=0; i<len(res); i++ {
+			str := strings.TrimSpace(res[i])
+			if len(str)>3 {
+				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{
+					Name:     encrypt([]byte(str)),
+					Location: encrypt([]byte("/")),
+				})
+			}
+		}
 	case "linux":
 		out, err = exec.Command("apt", "list", "--installed").Output()
 	default:
@@ -143,7 +157,8 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
-	workerAddr := "localhost" + port
+
+	workerAddr := ip + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

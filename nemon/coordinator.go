@@ -163,7 +163,7 @@ func StartCoordinator() {
 		pending:  map[string]uint{},
 	}
 
-	coordinator.SendDiscoveryPing("localhost")
+	//coordinator.SendDiscoveryPing("localhost")
 
 	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)
@@ -176,7 +176,7 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
-	//coordinator.BroadcastDiscoveryPings()
+	coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

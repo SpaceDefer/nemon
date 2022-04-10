@@ -37,6 +37,7 @@ message GetAppsResponse {
 
 message DeleteAppsRequest {
   bytes name = 1;
+  bytes location = 2;
 }
 
 message DeleteAppsResponse {

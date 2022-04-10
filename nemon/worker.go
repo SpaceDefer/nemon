@@ -134,7 +134,22 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 }
 
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
-	fmt.Printf("deleting %v\n", req.Name)
+	location := decrypt(req.Location)
+	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
+	switch systemInfo.OS {
+	case "darwin":
+		out, err := exec.Command("sudo", "rm", "-rf", string(location)).Output()
+		checkError(err)
+		fmt.Printf("%v\n", out)
+	case "windows":
+		//out, err := exec.Command("powershell", "-noprofile", "Get-WmiObject").Output()
+	case "linux":
+		out, err := exec.Command("apt", "remove", string(location)).Output()
+		checkError(err)
+		fmt.Printf("%v\n", out)
+	default:
+		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
+	}
 	return &pb.DeleteAppsResponse{Ok: true}, nil
 }
 

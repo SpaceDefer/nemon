@@ -8,8 +8,8 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 )
 
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
@@ -30,20 +30,20 @@ func GetLocalIP() string {
 
 	addrs, err := net.InterfaceAddrs()
 
-    if err != nil {
-        fmt.Println(err)
-    }
-	
-    for _, address := range addrs {
-        if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-            if ipnet.IP.To4() != nil {
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
 				addrStr := ipnet.IP.String()
-                if strings.Split(addrStr,".")[0] == "192" {
+				if strings.Split(addrStr, ".")[0] == "192" {
 					return addrStr
 				}
-            }
-        }
-    }
+			}
+		}
+	}
 	return ""
 }
 
@@ -117,6 +117,18 @@ func PKCS5UnPadding(src []byte) []byte {
 
 // WebSocket server structs
 
+type Type string
+
+const (
+	Alert Type = "ALT"
+	Info  Type = "INF"
+)
+
+type AlertMessage struct {
+	Type    Type   `json:"type"`
+	Message string `json:"message"`
+}
+
 type DeleteApplicationRequest struct {
 	ApplicationName string `json:"applicationName"`
 	WorkerIp        string `json:"workerIp"`
@@ -128,6 +140,7 @@ type ApplicationInfo struct {
 }
 
 type WorkerInfo struct {
+	Type            Type              `json:"type"`
 	ApplicationList []ApplicationInfo `json:"applicationList"`
 	WorkerIp        string            `json:"workerIp"`
 	Username        string            `json:"username"`

@@ -107,6 +107,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	}
 
 	wsServer.sendAppList(&WorkerInfo{
+		Type:            Info,
 		ApplicationList: ApplicationList,
 		WorkerIp:        worker.ip,
 		Username:        worker.username,
@@ -161,7 +162,7 @@ func StartCoordinator() {
 		pending:  map[string]uint{},
 	}
 
-	//coordinator.SendDiscoveryPing("localhost")
+	coordinator.SendDiscoveryPing("localhost")
 
 	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)
@@ -174,7 +175,7 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
-	coordinator.BroadcastDiscoveryPings()
+	//coordinator.BroadcastDiscoveryPings()
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

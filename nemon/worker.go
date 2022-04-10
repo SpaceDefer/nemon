@@ -108,13 +108,13 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 	case "windows":
 		pwd, err := os.Getwd()
 		checkError(err)
-		out, err := exec.Command("python",pwd+"\\nemon\\scripts\\getAppListWindows.py").Output()
+		out, err := exec.Command("python", pwd+"\\nemon\\scripts\\getAppListWindows.py").Output()
 		checkError(err)
 		list := string(out)
-		res := strings.Split(list,"\n")
-		for i:=0; i<len(res); i++ {
+		res := strings.Split(list, "\n")
+		for i := 0; i < len(res); i++ {
 			str := strings.TrimSpace(res[i])
-			if len(str)>3 {
+			if len(str) > 3 {
 				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{
 					Name:     encrypt([]byte(str)),
 					Location: encrypt([]byte("/")),
@@ -143,7 +143,7 @@ func StartWorker() {
 	InitSystemInfo()
 	ip := GetLocalIP()
 
-	workerAddr := ip + port
+	workerAddr := "localhost" + port
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

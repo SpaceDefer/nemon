@@ -31,7 +31,11 @@ func (ws *WebsocketServer) sendAlert(msg string) {
 		fmt.Printf("no client to send data to\n")
 		return
 	}
-	if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg})
+	if err != nil {
+		return
+	}
+	if err = conn.WriteMessage(websocket.TextMessage, res); err != nil {
 		log.Println(err)
 		return
 	} else {

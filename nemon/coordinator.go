@@ -37,7 +37,8 @@ func (c *Coordinator) ListenDeleteApplication() {
 			continue
 		}
 		go func(request *DeleteApplicationRequest) {
-			fmt.Printf("received an rpc, going to delete %v on %v\n", req.ApplicationName, req.WorkerIp)
+			fmt.Printf("received an rpc, going to delete %v on %v at %v\n", req.ApplicationName, req.WorkerIp, req.Location)
+
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			worker := c.workers[req.WorkerIp]
@@ -49,7 +50,8 @@ func (c *Coordinator) ListenDeleteApplication() {
 			response, err := worker.client.DeleteApp(
 				ctx,
 				&pb.DeleteAppsRequest{
-					Name: encrypt([]byte(req.ApplicationName)),
+					Name:     encrypt([]byte(req.ApplicationName)),
+					Location: encrypt([]byte(req.Location)),
 				},
 			)
 			if err != nil {

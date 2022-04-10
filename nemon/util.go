@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const initialVector = "1234567890123456"
+
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
 const heartbeatInterval = 10 * time.Second
 
@@ -73,12 +75,17 @@ func encrypt(plaintext []byte) []byte {
 	if c == nil {
 		return nil
 	}
-	blockSize := c.BlockSize()
-	data := PKCS5Padding(plaintext, blockSize)
-	enc := make([]byte, len(data))
+	// blockSize := c.BlockSize()
+	// data := PKCS5Padding(plaintext, blockSize)
+	// enc := make([]byte, len(data))
 
-	c.Encrypt(enc, data)
-	return enc
+	ecb := cipher.NewCBCEncrypter(c, []byte(initialVector))
+	content := []byte(plaintext)
+	content = PKCS5Padding(content, c.BlockSize())
+	crypted := make([]byte, len(content))
+	ecb.CryptBlocks(crypted, content)
+
+	return crypted
 }
 
 // decrypt returns an AES decrypted byte array
@@ -88,25 +95,23 @@ func decrypt(ciphertext []byte) []byte {
 	if c == nil {
 		return nil
 	}
+	ecb := cipher.NewCBCDecrypter(c, []byte(initialVector))
+	decrypted := make([]byte, len(ciphertext))
+	ecb.CryptBlocks(decrypted, ciphertext)
 
-	dec := make([]byte, len(ciphertext))
-
-	c.Decrypt(dec, ciphertext)
-
-	data := PKCS5UnPadding(dec)
+	data := PKCS5UnPadding(decrypted)
 	return data
 }
 
-func PKCS5Padding(src []byte, blockSize int) []byte {
-	padding := blockSize - len(src)%blockSize
+func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(src, padtext...)
+	return append(ciphertext, padtext...)
 }
 
-func PKCS5UnPadding(src []byte) []byte {
-	length := len(src)
-	unpadding := int(src[length-1])
-	return src[:(length - unpadding)]
+func PKCS5UnPadding(encrypt []byte) []byte {
+	padding := encrypt[len(encrypt)-1]
+	return encrypt[:len(encrypt)-int(padding)]
 }
 
 // WebSocket server structs
@@ -114,6 +119,7 @@ func PKCS5UnPadding(src []byte) []byte {
 type DeleteApplicationRequest struct {
 	ApplicationName string `json:"applicationName"`
 	WorkerIp        string `json:"workerIp"`
+	Location        string `json:"location"`
 }
 
 type ApplicationInfo struct {

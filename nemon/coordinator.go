@@ -69,7 +69,7 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	defer c.mu.Unlock()
 
 	pending := c.pending[ip]
-	if pending >= 3 {
+	if pending >= 4 {
 		// issue an alert
 		fmt.Printf("%v's computer hasn't reponsed in ages\n", ip)
 		wsServer.sendAlert(fmt.Sprintf("%v's computer at IP %v hasn't responsed in ages!", username, ip))
@@ -89,7 +89,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 		fmt.Printf("%v\n", err.Error())
 		return
 	}
-	c.pending[worker.ip]--
+	c.pending[worker.ip] = 0
 
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()

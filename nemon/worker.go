@@ -159,6 +159,8 @@ func StartWorker() {
 	ip := GetLocalIP()
 
 	workerAddr := "localhost" + port
+	//workerAddr := ip + port
+
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,

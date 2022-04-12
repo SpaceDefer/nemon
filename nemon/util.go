@@ -58,6 +58,8 @@ type SystemInfo struct {
 	nemonKey  int64
 	AESKey    []byte
 	AESCipher cipher.Block
+	SecretKey string
+	Password  string
 }
 
 // systemInfo is an instance of SystemInfo

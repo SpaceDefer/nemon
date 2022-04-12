@@ -10,9 +10,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// WebsocketServer stores a websocket.Conn and a sync.Mutex
 type WebsocketServer struct {
-	conn *websocket.Conn
-	mu   sync.Mutex
+	conn *websocket.Conn // conn is the websocket connection to the client
+	mu   sync.Mutex      // mu is a sync.Mutex to prevent data races
 }
 
 var upgrader = websocket.Upgrader{
@@ -20,6 +21,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// sendAlert to the WebsocketServer client
 func (ws *WebsocketServer) sendAlert(msg string) {
 	var err error
 
@@ -44,6 +46,7 @@ func (ws *WebsocketServer) sendAlert(msg string) {
 
 }
 
+// Cleanup and close WebsocketServer connections
 func (ws *WebsocketServer) Cleanup() {
 	ws.mu.Lock()
 	ws.mu.Unlock()
@@ -58,6 +61,7 @@ func (ws *WebsocketServer) Cleanup() {
 	}
 }
 
+// sendAppList to the WebsocketServer client
 func (ws *WebsocketServer) sendAppList(workerInfo *WorkerInfo) {
 	var err error
 
@@ -82,6 +86,7 @@ func (ws *WebsocketServer) sendAppList(workerInfo *WorkerInfo) {
 
 }
 
+// reader is the default handler of incoming requests
 func (ws *WebsocketServer) reader() {
 	for {
 		var req DeleteApplicationRequest
@@ -93,16 +98,22 @@ func (ws *WebsocketServer) reader() {
 			ws.mu.Unlock()
 			break
 		}
-		fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
-		deleteChan <- req
-		reply, err := json.Marshal(&DeleteApplicationReply{Ok: true})
-		if err != nil {
-			return
-		}
 
-		if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
-			log.Println(err)
-			return
+		switch req.Type {
+		case Delete:
+			fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
+			deleteChan <- req
+			reply, err := json.Marshal(&DeleteApplicationReply{Type: Acknowledge, Ok: true})
+			if err != nil {
+				return
+			}
+
+			if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
+				log.Println(err)
+				return
+			}
+		default:
+			fmt.Printf("don't recognise this currently\n")
 		}
 	}
 }

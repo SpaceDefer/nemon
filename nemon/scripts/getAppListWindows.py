@@ -1,3 +1,6 @@
+# python script to get the list of all applications on a Windows PC
+# with some formatting performed
+
 import winreg
 
 def foo(hive, flag):

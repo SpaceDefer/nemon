@@ -22,7 +22,10 @@ type Coordinator struct {
 	pending  map[string]uint    // pending checks if a request to a Worker is pending
 }
 
+// deleteChan sends DeleteApplicationRequest's from the wsServer to ListenDeleteApplication goroutine
 var deleteChan chan DeleteApplicationRequest
+
+// wsServer is an instance of WebsocketServer, started when the coordinator starts up
 var wsServer *WebsocketServer
 
 //var workerActive chan bool

@@ -60,6 +60,7 @@ type SystemInfo struct {
 	AESCipher cipher.Block
 }
 
+// systemInfo is an instance of SystemInfo
 var systemInfo SystemInfo
 
 // InitSystemInfo initialises the SystemInfo struct for the system
@@ -81,15 +82,11 @@ func encrypt(plaintext []byte) []byte {
 	if c == nil {
 		return nil
 	}
-	// blockSize := c.BlockSize()
-	// data := PKCS5Padding(plaintext, blockSize)
-	// enc := make([]byte, len(data))
 
 	ecb := cipher.NewCBCEncrypter(c, []byte(initialVector))
-	content := []byte(plaintext)
-	content = PKCS5Padding(content, c.BlockSize())
-	crypted := make([]byte, len(content))
-	ecb.CryptBlocks(crypted, content)
+	plaintext = PKCS5Padding(plaintext, c.BlockSize())
+	crypted := make([]byte, len(plaintext))
+	ecb.CryptBlocks(crypted, plaintext)
 
 	return crypted
 }
@@ -123,13 +120,17 @@ func PKCS5UnPadding(encrypt []byte) []byte {
 	return encrypt[:len(encrypt)-int(padding)]
 }
 
-// WebSocket server structs
+// WebSocket Server structs
 
+// Type of the WebsocketServer message
 type Type string
 
+// Type of messages to send through Websockets
 const (
-	Alert Type = "ALT"
-	Info  Type = "INF"
+	Alert       Type = "ALT" // Alert the WebsocketServer client
+	Info        Type = "INF" // Send Info to the WebsocketServer client
+	Delete      Type = "DEL" // Delete application
+	Acknowledge Type = "ACK" // Acknowledge a message sent or received
 )
 
 type AlertMessage struct {
@@ -138,6 +139,7 @@ type AlertMessage struct {
 }
 
 type DeleteApplicationRequest struct {
+	Type            Type   `json:"type"`
 	ApplicationName string `json:"applicationName"`
 	WorkerIp        string `json:"workerIp"`
 	Location        string `json:"location"`
@@ -158,5 +160,6 @@ type WorkerInfo struct {
 }
 
 type DeleteApplicationReply struct {
-	Ok bool `json:"ok"`
+	Type Type `json:"type"`
+	Ok   bool `json:"ok"`
 }

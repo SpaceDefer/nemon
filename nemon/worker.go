@@ -38,6 +38,7 @@ type Worker struct {
 	hostname   string           // hostname of the Worker
 }
 
+// GetSysInfo handles the handshake and connection establishment and sends the Worker's SystemInfo if successful
 func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
 	if req.Key != systemInfo.nemonKey {
 		return nil, fmt.Errorf("keys not the same, refusing connection")
@@ -133,6 +134,7 @@ func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.
 	return response, nil
 }
 
+// DeleteApp handles the deletion of an application on the Worker
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
 	location := decrypt(req.Location)
 	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))

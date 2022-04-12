@@ -17,6 +17,8 @@ import (
 )
 
 // Handshake performs our own handshake protocol with the established connection
+// returns a GetSysInfoResponse struct containing SystemInfo struct of the worker and an AESKey if successful,
+// a WorkerClient for the connection and an error if unsuccessful
 func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
 	client := pb.NewWorkerClient(connection)
 

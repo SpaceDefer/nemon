@@ -38,10 +38,29 @@ type Worker struct {
 	hostname   string           // hostname of the Worker
 }
 
+func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest) (*pb.IsEnrolledResponse, error) {
+	if req.Key != systemInfo.nemonKey {
+		return nil, fmt.Errorf("keys not the same, refusing connection\n")
+	}
+
+	// check if persistently stored enrollment info
+	var enrolled bool
+	enrolled = true
+
+	return &pb.IsEnrolledResponse{
+		Enrolled: enrolled,
+	}, nil
+}
+
+func (ws *workerServer) SaveEnrollmentInfo(_ context.Context, req *pb.SaveEnrollmentInfoRequest) (*pb.SaveEnrollmentInfoResponse, error) {
+	// persist salt, verifier and SRPGroup, saving the verifier securely
+	return &pb.SaveEnrollmentInfoResponse{}, nil
+}
+
 // GetSysInfo handles the handshake and connection establishment and sends the Worker's SystemInfo if successful
 func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
 	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("keys not the same, refusing connection")
+		return nil, fmt.Errorf("keys not the same, refusing connection\n")
 	}
 
 	var publicKey rsa.PublicKey
@@ -86,7 +105,7 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 }
 
 // GetApps implements GetApps RPC from the generated ProtoBuf file
-func (ws *workerServer) GetApps(_ context.Context, req *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	fmt.Printf("got a GetApps gRPC\n")
 	var err error
 	var out []byte

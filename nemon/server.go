@@ -94,7 +94,12 @@ func (ws *WebsocketServer) reader() {
 		if err != nil {
 			log.Println(err)
 			ws.mu.Lock()
-			ws.conn.Close()
+			err := ws.conn.Close()
+			if err != nil {
+				ws.mu.Unlock()
+				log.Println(err)
+				return
+			}
 			ws.mu.Unlock()
 			break
 		}

@@ -28,8 +28,6 @@ var deleteChan chan DeleteApplicationRequest
 // wsServer is an instance of WebsocketServer, started when the coordinator starts up
 var wsServer *WebsocketServer
 
-//var workerActive chan bool
-
 // ListenDeleteApplication wrapper for the server to call
 func (c *Coordinator) ListenDeleteApplication() {
 	for {

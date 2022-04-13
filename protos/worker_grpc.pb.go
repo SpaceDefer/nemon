@@ -21,6 +21,8 @@ type WorkerClient interface {
 	GetApps(ctx context.Context, in *GetAppsRequest, opts ...grpc.CallOption) (*GetAppsResponse, error)
 	GetSysInfo(ctx context.Context, in *GetSysInfoRequest, opts ...grpc.CallOption) (*GetSysInfoResponse, error)
 	DeleteApp(ctx context.Context, in *DeleteAppsRequest, opts ...grpc.CallOption) (*DeleteAppsResponse, error)
+	IsEnrolled(ctx context.Context, in *IsEnrolledRequest, opts ...grpc.CallOption) (*IsEnrolledResponse, error)
+	SaveEnrollmentInfo(ctx context.Context, in *SaveEnrollmentInfoRequest, opts ...grpc.CallOption) (*SaveEnrollmentInfoResponse, error)
 }
 
 type workerClient struct {
@@ -58,6 +60,24 @@ func (c *workerClient) DeleteApp(ctx context.Context, in *DeleteAppsRequest, opt
 	return out, nil
 }
 
+func (c *workerClient) IsEnrolled(ctx context.Context, in *IsEnrolledRequest, opts ...grpc.CallOption) (*IsEnrolledResponse, error) {
+	out := new(IsEnrolledResponse)
+	err := c.cc.Invoke(ctx, "/Worker/IsEnrolled", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workerClient) SaveEnrollmentInfo(ctx context.Context, in *SaveEnrollmentInfoRequest, opts ...grpc.CallOption) (*SaveEnrollmentInfoResponse, error) {
+	out := new(SaveEnrollmentInfoResponse)
+	err := c.cc.Invoke(ctx, "/Worker/SaveEnrollmentInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
@@ -65,6 +85,8 @@ type WorkerServer interface {
 	GetApps(context.Context, *GetAppsRequest) (*GetAppsResponse, error)
 	GetSysInfo(context.Context, *GetSysInfoRequest) (*GetSysInfoResponse, error)
 	DeleteApp(context.Context, *DeleteAppsRequest) (*DeleteAppsResponse, error)
+	IsEnrolled(context.Context, *IsEnrolledRequest) (*IsEnrolledResponse, error)
+	SaveEnrollmentInfo(context.Context, *SaveEnrollmentInfoRequest) (*SaveEnrollmentInfoResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -80,6 +102,12 @@ func (UnimplementedWorkerServer) GetSysInfo(context.Context, *GetSysInfoRequest)
 }
 func (UnimplementedWorkerServer) DeleteApp(context.Context, *DeleteAppsRequest) (*DeleteAppsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteApp not implemented")
+}
+func (UnimplementedWorkerServer) IsEnrolled(context.Context, *IsEnrolledRequest) (*IsEnrolledResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsEnrolled not implemented")
+}
+func (UnimplementedWorkerServer) SaveEnrollmentInfo(context.Context, *SaveEnrollmentInfoRequest) (*SaveEnrollmentInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveEnrollmentInfo not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -148,6 +176,42 @@ func _Worker_DeleteApp_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_IsEnrolled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsEnrolledRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).IsEnrolled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/IsEnrolled",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).IsEnrolled(ctx, req.(*IsEnrolledRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Worker_SaveEnrollmentInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveEnrollmentInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).SaveEnrollmentInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/SaveEnrollmentInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).SaveEnrollmentInfo(ctx, req.(*SaveEnrollmentInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -166,6 +230,14 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteApp",
 			Handler:    _Worker_DeleteApp_Handler,
+		},
+		{
+			MethodName: "IsEnrolled",
+			Handler:    _Worker_IsEnrolled_Handler,
+		},
+		{
+			MethodName: "SaveEnrollmentInfo",
+			Handler:    _Worker_SaveEnrollmentInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

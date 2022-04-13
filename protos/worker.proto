@@ -6,7 +6,25 @@ service Worker  {
   rpc GetApps(GetAppsRequest) returns (GetAppsResponse);
   rpc GetSysInfo(GetSysInfoRequest) returns (GetSysInfoResponse);
   rpc DeleteApp(DeleteAppsRequest) returns (DeleteAppsResponse);
+  rpc IsEnrolled(IsEnrolledRequest) returns (IsEnrolledResponse);
+  rpc SaveEnrollmentInfo(SaveEnrollmentInfoRequest) returns (SaveEnrollmentInfoResponse);
 }
+
+message IsEnrolledRequest {
+  int64 key = 1;
+}
+
+message IsEnrolledResponse {
+  bool enrolled = 1;  // check if is enrolled after above check
+}
+
+message SaveEnrollmentInfoRequest {
+  bytes verifier = 1;
+  bytes salt = 2;
+  int64 SRPGroup = 3;
+}
+
+message SaveEnrollmentInfoResponse {}
 
 message GetSysInfoRequest {
   int64 key = 1;

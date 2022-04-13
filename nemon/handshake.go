@@ -13,6 +13,8 @@ import (
 
 	pb "nemon/protos"
 
+	"github.com/1Password/srp"
+
 	"google.golang.org/grpc"
 )
 
@@ -67,41 +69,69 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	return response, client, nil
 }
 
-//// Enrollment enrols the Coordinator with the Worker
-//func (c *Coordinator) Enrollment(connection *grpc.ClientConn) error {
-//	group := srp.RFC5054Group3072
-//	pw := "temp!" // make a random password
-//
-//	salt := make([]byte, 8)
-//	if n, err := rand.Read(salt); err != nil {
-//		return err
-//	} else if n != 8 {
-//		return fmt.Errorf("couldn't generate an 8 byte salt")
-//	}
-//
-//	username := "random" // random username
-//
-//	// save the
-//	// password and the
-//	// username in sysInfo for later use
-//
-//	x := srp.KDFRFC5054(salt, username, pw)
-//
-//	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
-//	if firstClient == nil {
-//		return fmt.Errorf("couldn't create a srpClient")
-//	}
-//	_, err := firstClient.Verifier() // Verifier, err
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	// make a grpc call to save v on the Worker
-//
-//	return nil
-//}
-//
+func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
+	client := pb.NewWorkerClient(connection)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	response, err := client.IsEnrolled(ctx, &pb.IsEnrolledRequest{
+		Key: systemInfo.nemonKey,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if !response.Enrolled {
+		err := c.Enrollment(client)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	// authenticate and verify
+	return nil, nil, nil
+}
+
+// Enrollment enrols the Coordinator with the Worker
+func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
+	group := srp.RFC5054Group3072
+	pw := "temp!" // make a random password
+
+	enrollmentCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	salt := make([]byte, 8)
+	if n, err := rand.Read(salt); err != nil {
+		return err
+	} else if n != 8 {
+		return fmt.Errorf("couldn't generate an 8 byte salt")
+	}
+
+	username := "random" // random username
+
+	// save the
+	// password and the
+	// username in worker(server) sysInfo for later use
+
+	x := srp.KDFRFC5054(salt, username, pw)
+
+	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
+	if firstClient == nil {
+		return fmt.Errorf("couldn't create a srpClient")
+	}
+	v, err := firstClient.Verifier() // Verifier, err
+	if err != nil {
+		return err
+	}
+	// make a grpc call to save v on the Worker
+	_, err = client.SaveEnrollmentInfo(enrollmentCtx, &pb.SaveEnrollmentInfoRequest{
+		Salt:     salt,
+		Verifier: v.Bytes(),
+		SRPGroup: int64(group),
+	})
+
+	return err
+}
+
 //func (c *Coordinator) Authentication(connection *grpc.ClientConn) error {
 //	// grpc call to request the salt and SRP Group from the Worker
 //	response, err := worker.client.GetSaltAndSRP(ctx, &pb.GetSaltAndSRPRequest{})

@@ -52,6 +52,7 @@ func GetLocalIP() string {
 // SystemInfo contains frequently required information about the system on which
 // the software is running
 type SystemInfo struct {
+	Dev       bool
 	OS        string
 	hostname  string
 	username  string
@@ -70,6 +71,11 @@ func InitSystemInfo() {
 	systemInfo.OS = os.Getenv("OS")
 	systemInfo.hostname = os.Getenv("HOSTNAME")
 	systemInfo.username = os.Getenv("USERNAME")
+	if os.Getenv("DEV") == "dev" {
+		systemInfo.Dev = true
+	} else {
+		systemInfo.Dev = false
+	}
 	key, err := strconv.ParseInt(os.Getenv("NEMONKEY"), 10, 64)
 	if err != nil {
 		log.Fatalf("issues with the key\n")

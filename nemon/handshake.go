@@ -13,7 +13,6 @@ import (
 
 	pb "nemon/protos"
 
-	"github.com/1password/srp"
 	"google.golang.org/grpc"
 )
 
@@ -68,48 +67,48 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	return response, client, nil
 }
 
-// Enrollment enrols the Coordinator with the Worker
-func (c *Coordinator) Enrollment(connection *grpc.ClientConn) error {
-	group := srp.RFC5054Group3072
-	pw := "temp!" // make a random password
-
-	salt := make([]byte, 8)
-	if n, err := rand.Read(salt); err != nil {
-		return err
-	} else if n != 8 {
-		return fmt.Errorf("couldn't generate an 8 byte salt")
-	}
-
-	username := "random" // random username
-
-	// save the
-	// password and the
-	// username in sysInfo for later use
-
-	x := srp.KDFRFC5054(salt, username, pw)
-
-	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
-	if firstClient == nil {
-		return fmt.Errorf("couldn't create a srpClient")
-	}
-	_, err := firstClient.Verifier() // Verifier, err
-
-	if err != nil {
-		return err
-	}
-
-	// make a grpc call to save v on the Worker
-
-	return nil
-}
-
-func (c *Coordinator) Authentication(connection *grpc.ClientConn) error {
-	// grpc call to request the salt and SRP Group from the Worker
-	response, err := worker.client.GetSaltAndSRP(ctx, &pb.GetSaltAndSRPRequest{})
-	// fetch the master password and secret key (username?) from the sysInfo
-	pw, secretKey := systemInfo.Password, systemInfo.SecretKey
-	x := srp.KDFRFC5054(response.Salt, secretKey, pw)
-	client := srp.NewSRPClient(srp.KnownGroups[response], x, nil)
-
-	return nil
-}
+//// Enrollment enrols the Coordinator with the Worker
+//func (c *Coordinator) Enrollment(connection *grpc.ClientConn) error {
+//	group := srp.RFC5054Group3072
+//	pw := "temp!" // make a random password
+//
+//	salt := make([]byte, 8)
+//	if n, err := rand.Read(salt); err != nil {
+//		return err
+//	} else if n != 8 {
+//		return fmt.Errorf("couldn't generate an 8 byte salt")
+//	}
+//
+//	username := "random" // random username
+//
+//	// save the
+//	// password and the
+//	// username in sysInfo for later use
+//
+//	x := srp.KDFRFC5054(salt, username, pw)
+//
+//	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
+//	if firstClient == nil {
+//		return fmt.Errorf("couldn't create a srpClient")
+//	}
+//	_, err := firstClient.Verifier() // Verifier, err
+//
+//	if err != nil {
+//		return err
+//	}
+//
+//	// make a grpc call to save v on the Worker
+//
+//	return nil
+//}
+//
+//func (c *Coordinator) Authentication(connection *grpc.ClientConn) error {
+//	// grpc call to request the salt and SRP Group from the Worker
+//	response, err := worker.client.GetSaltAndSRP(ctx, &pb.GetSaltAndSRPRequest{})
+//	// fetch the master password and secret key (username?) from the sysInfo
+//	pw, secretKey := systemInfo.Password, systemInfo.SecretKey
+//	x := srp.KDFRFC5054(response.Salt, secretKey, pw)
+//	client := srp.NewSRPClient(srp.KnownGroups[response], x, nil)
+//
+//	return nil
+//}

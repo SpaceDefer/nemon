@@ -13,12 +13,12 @@ import (
 
 // SendDiscoveryPing sends a single discovery ping to the give ip
 func (c *Coordinator) SendDiscoveryPing(ip string) {
-	Command := fmt.Sprintf("ping -c 1 -W 1 " + ip + " > nul && echo true || echo false")
+	Command := fmt.Sprintf("ping -c 1 -W 1 " + ip + " > /dev/null && echo true || echo false")
 	var output []byte
 	var err error
 	switch systemInfo.OS {
 	case "windows":
-		output, err = exec.Command("ping", "-c", "1", "-W", "1", ip, " > /dev/null && echo true || echo false").Output()
+		output, err = exec.Command("ping", "-c", "1", "-W", "1", ip, " > nul && echo true || echo false").Output()
 	default:
 		output, err = exec.Command("/bin/sh", "-c", Command).Output()
 	}

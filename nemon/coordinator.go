@@ -167,8 +167,6 @@ func StartCoordinator() {
 		pending:  map[string]uint{},
 	}
 
-	//coordinator.SendDiscoveryPing("localhost")
-
 	// Listen for an exit syscall to perform the cleanup and exit
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
@@ -180,7 +178,12 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
-	coordinator.BroadcastDiscoveryPings()
+	if systemInfo.Dev {
+		coordinator.SendDiscoveryPing("localhost")
+	} else {
+		coordinator.BroadcastDiscoveryPings()
+	}
+
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers
@@ -190,7 +193,6 @@ func StartCoordinator() {
 	if nWorkers >= 0 {
 		cycle := 1
 		for cycle < 100 {
-			// TODO: check and alert non responsive workers
 			coordinator.BroadcastHeartbeats(cycle)
 			time.Sleep(heartbeatInterval)
 			cycle++

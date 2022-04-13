@@ -158,10 +158,13 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 // StartWorker handles starting up the worker on the machine
 func StartWorker() {
 	InitSystemInfo()
-	ip := GetLocalIP()
-
-	workerAddr := "localhost" + port
-	//workerAddr := ip + port
+	var workerAddr, ip string
+	if systemInfo.Dev {
+		workerAddr = "localhost" + port
+	} else {
+		ip = GetLocalIP()
+		workerAddr = ip + port
+	}
 
 	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,

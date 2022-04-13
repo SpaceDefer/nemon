@@ -13,13 +13,13 @@ Please make sure that the coordinator and worker are connected on the same netwo
 To run coordinator :
 
 ```
-go run main.go --mode coordinator
+go run main.go --mode coordinator --key <some-number> (--dev for development on localhost)
 ```
 
 To run worker :
 
 ```
-go run main.go --mode worker
+go run main.go --mode worker --key <same-number-as-the-coordinator> (--dev for development on localhost)
 ```
 
 ---
@@ -36,6 +36,6 @@ Set up `goimports` to run on save
 
 - [goland](https://stackoverflow.com/questions/45590236/running-goimports-on-save-in-goland)
 - [vs code](https://hyr.mn/gofmt/)
-  - Install goimports globally using `$ go install golang.org/x/tools/cmd/goimports@latest`
+    - Install goimports globally using `$ go install golang.org/x/tools/cmd/goimports@latest`
 - [nvim](https://thoughtbot.com/blog/writing-go-in-vim)
-  - `let g:go_fmt_autosave = 1`
+    - `let g:go_fmt_autosave = 1`

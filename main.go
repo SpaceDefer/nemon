@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	key  = flag.String("key", "", "worker key, same as the coordinator")
-	mode = flag.String("mode", "worker", "coordinator or worker")
+	key  = flag.String("key", "", "worker key, same as the coordinator") // key is the nemon product key
+	mode = flag.String("mode", "worker", "coordinator or worker")        // mode is the mode nemon runs in
+	dev  = flag.Bool("dev", false, "start dev")                          // dev decides whether to start dev environment or not
 )
 
 func Init() error {
@@ -41,6 +42,11 @@ func Init() error {
 	}
 	if err = os.Setenv("NEMONKEY", *key); err != nil {
 		return err
+	}
+	if *dev {
+		if err = os.Setenv("DEV", "dev"); err != nil {
+			return err
+		}
 	}
 	return nil
 }

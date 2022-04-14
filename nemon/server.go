@@ -107,8 +107,15 @@ func (ws *WebsocketServer) reader() {
 		switch req.Type {
 		case Delete:
 			fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
-			deleteChan <- req
-			reply, err := json.Marshal(&DeleteApplicationReply{Type: Acknowledge, Ok: true})
+
+			if !systemInfo.Dev {
+				deleteChan <- req
+			}
+			reply, err := json.Marshal(&DeleteApplicationReply{
+				Type:    Acknowledge,
+				Ok:      true,
+				Message: fmt.Sprintf("removed %v successfully!", req.ApplicationName),
+			})
 			if err != nil {
 				return
 			}

@@ -168,6 +168,7 @@ type WorkerInfo struct {
 }
 
 type DeleteApplicationReply struct {
-	Type Type `json:"type"`
-	Ok   bool `json:"ok"`
+	Type    Type   `json:"type"`
+	Ok      bool   `json:"ok"`
+	Message string `json:"message"`
 }

@@ -144,6 +144,7 @@ const (
 type AlertMessage struct {
 	Type    Type   `json:"type"`
 	Message string `json:"message"`
+	Ip      string `json:"workerIp"`
 }
 
 type DeleteApplicationRequest struct {

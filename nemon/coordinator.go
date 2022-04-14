@@ -73,7 +73,7 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	if pending >= 4 {
 		// issue an alert
 		fmt.Printf("%v's computer hasn't reponsed in ages\n", ip)
-		wsServer.sendAlert(fmt.Sprintf("%v's computer at IP %v hasn't responsed in ages!", username, ip))
+		wsServer.sendAlert(fmt.Sprintf("%v's computer at IP %v hasn't responsed in ages!", username, ip), ip)
 	}
 }
 

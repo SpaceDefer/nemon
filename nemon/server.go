@@ -22,7 +22,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // sendAlert to the WebsocketServer client
-func (ws *WebsocketServer) sendAlert(msg string) {
+func (ws *WebsocketServer) sendAlert(msg string, ip string) {
 	var err error
 
 	ws.mu.Lock()
@@ -33,7 +33,7 @@ func (ws *WebsocketServer) sendAlert(msg string) {
 		fmt.Printf("no client to send data to\n")
 		return
 	}
-	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg})
+	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg, Ip: ip})
 	if err != nil {
 		return
 	}

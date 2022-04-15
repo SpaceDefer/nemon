@@ -10,6 +10,10 @@ import (
 	"time"
 
 	pb "nemon/protos"
+
+	"google.golang.org/grpc/codes"
+
+	"google.golang.org/grpc/status"
 )
 
 // Coordinator struct implements the coordinator
@@ -85,9 +89,19 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
+	// TODO: check if error is session expired. add error codes too, easier to check
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
+	st, ok := status.FromError(err)
+	if !ok {
+		fmt.Printf("cant parse error code\n")
+		return
+	}
 	if err != nil {
-		fmt.Printf("%v\n", err.Error())
+		fmt.Printf("%v\n", st.Message())
+		if st.Code() == codes.Unauthenticated {
+			// remove worker info currently and start authentication again with handshake
+			fmt.Printf("restarting auth with ip %v\n", worker.ip)
+		}
 		return
 	}
 	c.pending[worker.ip] = 0
@@ -101,9 +115,17 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 
 	for _, app := range response.Applications {
 		if !c.allowed[string(decrypt(app.GetName()))] {
-			fmt.Printf("found an app on %v's at ip [%v] which isn't allowed: %v\n", string(decrypt(response.Username)), worker.ip, string(decrypt(app.GetName())))
+			fmt.Printf(
+				"found an app on %v's at ip [%v] which isn't allowed: %v\n",
+				string(decrypt(response.Username)),
+				worker.ip,
+				string(decrypt(app.GetName())),
+			)
 
-			app := ApplicationInfo{ApplicationName: string(decrypt(app.GetName())), Location: string(decrypt(app.GetLocation()))}
+			app := ApplicationInfo{
+				ApplicationName: string(decrypt(app.GetName())),
+				Location:        string(decrypt(app.GetLocation())),
+			}
 
 			ApplicationList = append(ApplicationList, app)
 		}

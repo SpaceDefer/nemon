@@ -17,3 +17,4 @@
     - [ ] quick restart is a failure, AESKey goes blank and can't be detected between heartbeats
     - [ ] new handshake's and ways to check if the session is still valid (maybe through public key or random numbers
       signifying sessions)
+- [ ] error status (make all `fmt.Errorf` to `status.Error`) [link](https://jbrandhorst.com/post/grpc-errors/)

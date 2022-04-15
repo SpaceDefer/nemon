@@ -19,6 +19,9 @@ import (
 
 	pb "nemon/protos"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"google.golang.org/grpc"
 )
 
@@ -106,6 +109,9 @@ func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest)
 
 // GetApps implements GetApps RPC from the generated ProtoBuf file
 func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	if systemInfo.AESKey == nil {
+		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
+	}
 	fmt.Printf("got a GetApps gRPC\n")
 	var err error
 	var out []byte
@@ -155,6 +161,9 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 
 // DeleteApp handles the deletion of an application on the Worker
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
+	if systemInfo.AESKey == nil {
+		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
+	}
 	location := decrypt(req.Location)
 	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
 	switch systemInfo.OS {

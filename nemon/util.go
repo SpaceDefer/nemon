@@ -17,6 +17,8 @@ const initialVector = "1234567890123456"
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
 const heartbeatInterval = 10 * time.Second
 
+const devHeartbeatInterval = 5 * time.Second
+
 // default port
 const port = ":8080"
 
@@ -142,9 +144,9 @@ const (
 )
 
 type AlertMessage struct {
-	Type    Type   `json:"type"`
-	Message string `json:"message"`
-	Ip      string `json:"workerIp"`
+	Type     Type   `json:"type"`
+	Message  string `json:"message"`
+	WorkerIp string `json:"workerIp"`
 }
 
 type DeleteApplicationRequest struct {
@@ -172,4 +174,10 @@ type DeleteApplicationReply struct {
 	Type    Type   `json:"type"`
 	Ok      bool   `json:"ok"`
 	Message string `json:"message"`
+}
+
+type WorkerStatusMessage struct {
+	Type     Type   `json:"type"`
+	WorkerIp string `json:"workerIp"`
+	Status   Status `json:"status"`
 }

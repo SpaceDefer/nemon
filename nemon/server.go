@@ -21,23 +21,50 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+type Status string
+
+const (
+	Offline      Status = "offline"
+	Online       Status = "online"
+	Reconnecting Status = "reconnecting"
+)
+
+func (ws *WebsocketServer) sendWorkerStatus(ip string, status Status) {
+	var err error
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+
+	if ws.conn == nil {
+		fmt.Printf("no client to send data to\n")
+		return
+	}
+
+	res, err := json.Marshal(&WorkerStatusMessage{Type: Alert, Status: status, WorkerIp: ip})
+	if err != nil {
+		return
+	}
+	if err = ws.conn.WriteMessage(websocket.TextMessage, res); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
 // sendAlert to the WebsocketServer client
 func (ws *WebsocketServer) sendAlert(msg string, ip string) {
 	var err error
 
 	ws.mu.Lock()
-	conn := ws.conn
-	ws.mu.Unlock()
+	defer ws.mu.Unlock()
 
-	if conn == nil {
+	if ws.conn == nil {
 		fmt.Printf("no client to send data to\n")
 		return
 	}
-	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg, Ip: ip})
+	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg, WorkerIp: ip})
 	if err != nil {
 		return
 	}
-	if err = conn.WriteMessage(websocket.TextMessage, res); err != nil {
+	if err = ws.conn.WriteMessage(websocket.TextMessage, res); err != nil {
 		log.Println(err)
 		return
 	}
@@ -63,8 +90,8 @@ func (ws *WebsocketServer) sendAppList(workerInfo *WorkerInfo) {
 	var err error
 
 	ws.mu.Lock()
+	defer ws.mu.Unlock()
 	conn := ws.conn
-	ws.mu.Unlock()
 
 	if conn == nil {
 		fmt.Printf("no client found\n")

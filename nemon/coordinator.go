@@ -77,7 +77,7 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	if pending >= 4 {
 		// issue an alert
 		fmt.Printf("%v's computer hasn't reponsed in ages\n", ip)
-		wsServer.sendAlert(fmt.Sprintf("%v's computer at IP %v hasn't responsed in ages!", username, ip), ip)
+		wsServer.sendWorkerStatus(ip, Offline)
 	}
 }
 
@@ -100,6 +100,10 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 		fmt.Printf("%v\n", st.Message())
 		if st.Code() == codes.Unauthenticated {
 			// remove worker info currently and start authentication again with handshake
+			delete(c.workers, worker.ip)
+			wsServer.sendWorkerStatus(worker.ip, Reconnecting)
+			go c.SendDiscoveryPing(worker.ip)
+
 			fmt.Printf("restarting auth with ip %v\n", worker.ip)
 		}
 		return
@@ -214,7 +218,11 @@ func StartCoordinator() {
 		cycle := 1
 		for cycle < 100 {
 			coordinator.BroadcastHeartbeats(cycle)
-			time.Sleep(heartbeatInterval)
+			if systemInfo.Dev {
+				time.Sleep(devHeartbeatInterval)
+			} else {
+				time.Sleep(heartbeatInterval)
+			}
 			cycle++
 		}
 	}

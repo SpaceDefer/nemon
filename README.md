@@ -39,3 +39,11 @@ Set up `goimports` to run on save
     - Install goimports globally using `$ go install golang.org/x/tools/cmd/goimports@latest`
 - [nvim](https://thoughtbot.com/blog/writing-go-in-vim)
     - `let g:go_fmt_autosave = 1`
+
+## Code Info
+
+Make sure to use error codes with `status.Error` in all gRPC errors
+
+- change all `fmt.Printf` or `log.Fatalf` in Worker to `status.Error` along with
+  proper [codes](https://www.grpc.io/docs/guides/error/#general-errors)
+- [more info](https://jbrandhorst.com/post/grpc-errors/)

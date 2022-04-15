@@ -40,10 +40,7 @@ func (ws *WebsocketServer) sendAlert(msg string, ip string) {
 	if err = conn.WriteMessage(websocket.TextMessage, res); err != nil {
 		log.Println(err)
 		return
-	} else {
-		fmt.Println("message sent")
 	}
-
 }
 
 // Cleanup and close WebsocketServer connections

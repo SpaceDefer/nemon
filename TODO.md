@@ -13,3 +13,7 @@
 - [x] push an alert over websockets on an alert (high)
 - [x] way to close the server?
 - [ ] nul directory windows
+- [ ] restarting the worker gives a blank list to the coordinator(?)
+    - [ ] quick restart is a failure, AESKey goes blank and can't be detected between heartbeats
+    - [ ] new handshake's and ways to check if the session is still valid (maybe through public key or random numbers
+      signifying sessions)

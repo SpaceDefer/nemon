@@ -63,6 +63,7 @@ type SystemInfo struct {
 	AESCipher cipher.Block
 	SecretKey string
 	Password  string
+	ConfigDir string
 }
 
 // systemInfo is an instance of SystemInfo
@@ -73,6 +74,7 @@ func InitSystemInfo() {
 	systemInfo.OS = os.Getenv("OS")
 	systemInfo.hostname = os.Getenv("HOSTNAME")
 	systemInfo.username = os.Getenv("USERNAME")
+	systemInfo.ConfigDir = os.Getenv("CONFIG_DIR")
 	if os.Getenv("DEV") == "dev" {
 		systemInfo.Dev = true
 	} else {
@@ -168,6 +170,12 @@ type WorkerInfo struct {
 	Username        string            `json:"username"`
 	Hostname        string            `json:"hostname"`
 	Os              string            `json:"os"`
+}
+
+type EnrollmentInfo struct {
+	SRPGroup int64
+	Salt     []byte
+	Verifier []byte
 }
 
 type DeleteApplicationReply struct {

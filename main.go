@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/user"
@@ -18,6 +19,16 @@ var (
 )
 
 func Init() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	configDir := fmt.Sprintf(homeDir + "/.nemon_config/")
+	fmt.Printf("config dir: %v\n", configDir)
+	err = os.Mkdir(configDir, 0750)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
 	flag.Parse()
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -41,6 +52,9 @@ func Init() error {
 		return err
 	}
 	if err = os.Setenv("NEMONKEY", *key); err != nil {
+		return err
+	}
+	if err = os.Setenv("CONFIG_DIR", configDir); err != nil {
 		return err
 	}
 	if *dev {

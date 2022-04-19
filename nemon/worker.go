@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"math/big"
@@ -48,8 +49,23 @@ func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest)
 
 	// check if persistently stored enrollment info
 	var enrolled bool
-	enrolled = true
+	enrolled = false
 
+	infoFile, err := os.Open(systemInfo.ConfigDir + "/enrollment_info.gob")
+
+	if err != nil {
+		return &pb.IsEnrolledResponse{
+			Enrolled: enrolled,
+		}, status.Error(codes.Internal, "couldn't open info file")
+	}
+
+	decoder := gob.NewDecoder(infoFile)
+
+	enrollmentInfo := EnrollmentInfo{}
+
+	decoder.Decode(&enrollmentInfo)
+	fmt.Println(enrollmentInfo)
+	enrolled = true
 	return &pb.IsEnrolledResponse{
 		Enrolled: enrolled,
 	}, nil
@@ -57,6 +73,21 @@ func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest)
 
 func (ws *workerServer) SaveEnrollmentInfo(_ context.Context, req *pb.SaveEnrollmentInfoRequest) (*pb.SaveEnrollmentInfoResponse, error) {
 	// persist salt, verifier and SRPGroup, saving the verifier securely
+	fmt.Printf("saving enrollment info\n")
+	infoFileLocation := fmt.Sprintf(systemInfo.ConfigDir + "/enrollment_info.gob")
+	infoFile, err := os.Create(infoFileLocation)
+	defer infoFile.Close()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "couldn't create gob file")
+	}
+	fmt.Printf("file created\n")
+	enc := gob.NewEncoder(infoFile)
+	err = enc.Encode(EnrollmentInfo{req.SRPGroup, req.Salt, req.Verifier})
+	if err != nil {
+		return nil, status.Error(codes.Internal, "couldn't encode")
+	}
+
+	fmt.Printf("saved successfully\n")
 	return &pb.SaveEnrollmentInfoResponse{}, nil
 }
 

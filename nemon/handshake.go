@@ -91,7 +91,7 @@ func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoRes
 	return nil, nil, nil
 }
 
-// Enrollment enrols the Coordinator with the Worker
+// Enrollment enrolls the Coordinator with the Worker
 func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	group := srp.RFC5054Group3072
 	pw := "temp!" // make a random password

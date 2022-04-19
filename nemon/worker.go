@@ -42,21 +42,12 @@ type Worker struct {
 	hostname   string           // hostname of the Worker
 }
 
-func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest) (*pb.IsEnrolledResponse, error) {
-	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("keys not the same, refusing connection\n")
-	}
-
-	// check if persistently stored enrollment info
-	var enrolled bool
-	enrolled = false
-
+func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequest) (*pb.GetSaltAndSRPResponse, error) {
+	fmt.Printf("received getsaltandsrp")
 	infoFile, err := os.Open(systemInfo.ConfigDir + "/enrollment_info.gob")
 
 	if err != nil {
-		return &pb.IsEnrolledResponse{
-			Enrolled: enrolled,
-		}, status.Error(codes.Internal, "couldn't open info file")
+		return nil, status.Error(codes.Internal, "couldn't open info file")
 	}
 
 	decoder := gob.NewDecoder(infoFile)
@@ -65,9 +56,27 @@ func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest)
 
 	decoder.Decode(&enrollmentInfo)
 	fmt.Println(enrollmentInfo)
-	enrolled = true
+	return &pb.GetSaltAndSRPResponse{
+		Salt:     enrollmentInfo.Salt,
+		SRPGroup: enrollmentInfo.SRPGroup,
+	}, nil
+}
+
+func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest) (*pb.IsEnrolledResponse, error) {
+	if req.Key != systemInfo.nemonKey {
+		return nil, fmt.Errorf("keys not the same, refusing connection\n")
+	}
+
+	// check if persistently stored enrollment info
+	infoFilePath := fmt.Sprintf(systemInfo.ConfigDir + "/enrollment_info.gob")
+	_, err := os.Stat(infoFilePath)
+	if err != nil {
+		return &pb.IsEnrolledResponse{
+			Enrolled: false,
+		}, nil
+	}
 	return &pb.IsEnrolledResponse{
-		Enrolled: enrolled,
+		Enrolled: true,
 	}, nil
 }
 

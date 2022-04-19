@@ -23,6 +23,7 @@ type WorkerClient interface {
 	DeleteApp(ctx context.Context, in *DeleteAppsRequest, opts ...grpc.CallOption) (*DeleteAppsResponse, error)
 	IsEnrolled(ctx context.Context, in *IsEnrolledRequest, opts ...grpc.CallOption) (*IsEnrolledResponse, error)
 	SaveEnrollmentInfo(ctx context.Context, in *SaveEnrollmentInfoRequest, opts ...grpc.CallOption) (*SaveEnrollmentInfoResponse, error)
+	GetSaltAndSRP(ctx context.Context, in *GetSaltAndSRPRequest, opts ...grpc.CallOption) (*GetSaltAndSRPResponse, error)
 }
 
 type workerClient struct {
@@ -78,6 +79,15 @@ func (c *workerClient) SaveEnrollmentInfo(ctx context.Context, in *SaveEnrollmen
 	return out, nil
 }
 
+func (c *workerClient) GetSaltAndSRP(ctx context.Context, in *GetSaltAndSRPRequest, opts ...grpc.CallOption) (*GetSaltAndSRPResponse, error) {
+	out := new(GetSaltAndSRPResponse)
+	err := c.cc.Invoke(ctx, "/Worker/GetSaltAndSRP", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
@@ -87,6 +97,7 @@ type WorkerServer interface {
 	DeleteApp(context.Context, *DeleteAppsRequest) (*DeleteAppsResponse, error)
 	IsEnrolled(context.Context, *IsEnrolledRequest) (*IsEnrolledResponse, error)
 	SaveEnrollmentInfo(context.Context, *SaveEnrollmentInfoRequest) (*SaveEnrollmentInfoResponse, error)
+	GetSaltAndSRP(context.Context, *GetSaltAndSRPRequest) (*GetSaltAndSRPResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -108,6 +119,9 @@ func (UnimplementedWorkerServer) IsEnrolled(context.Context, *IsEnrolledRequest)
 }
 func (UnimplementedWorkerServer) SaveEnrollmentInfo(context.Context, *SaveEnrollmentInfoRequest) (*SaveEnrollmentInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveEnrollmentInfo not implemented")
+}
+func (UnimplementedWorkerServer) GetSaltAndSRP(context.Context, *GetSaltAndSRPRequest) (*GetSaltAndSRPResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSaltAndSRP not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -212,6 +226,24 @@ func _Worker_SaveEnrollmentInfo_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_GetSaltAndSRP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSaltAndSRPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).GetSaltAndSRP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/GetSaltAndSRP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).GetSaltAndSRP(ctx, req.(*GetSaltAndSRPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +270,10 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveEnrollmentInfo",
 			Handler:    _Worker_SaveEnrollmentInfo_Handler,
+		},
+		{
+			MethodName: "GetSaltAndSRP",
+			Handler:    _Worker_GetSaltAndSRP_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

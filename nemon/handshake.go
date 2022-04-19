@@ -88,6 +88,10 @@ func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoRes
 		}
 	}
 	// authenticate and verify
+	err = c.Authentication(client)
+	if err != nil {
+		return nil, nil, nil
+	}
 	return nil, nil, nil
 }
 
@@ -132,13 +136,18 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	return err
 }
 
-//func (c *Coordinator) Authentication(connection *grpc.ClientConn) error {
-//	// grpc call to request the salt and SRP Group from the Worker
-//	response, err := worker.client.GetSaltAndSRP(ctx, &pb.GetSaltAndSRPRequest{})
-//	// fetch the master password and secret key (username?) from the sysInfo
-//	pw, secretKey := systemInfo.Password, systemInfo.SecretKey
-//	x := srp.KDFRFC5054(response.Salt, secretKey, pw)
-//	client := srp.NewSRPClient(srp.KnownGroups[response], x, nil)
-//
-//	return nil
-//}
+func (c *Coordinator) Authentication(client pb.WorkerClient) error {
+	// grpc call to request the salt and SRP Group from the Worker
+	authCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	response, err := client.GetSaltAndSRP(authCtx, &pb.GetSaltAndSRPRequest{})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("salt %v\ngroup %v\n", string(response.Salt), response.SRPGroup)
+	// fetch the master password and secret key (username?) from the sysInfo
+	//pw, secretKey := systemInfo.Password, systemInfo.SecretKey
+	//x := srp.KDFRFC5054(response.Salt, secretKey, pw)
+
+	return nil
+}

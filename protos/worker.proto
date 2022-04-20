@@ -51,11 +51,7 @@ message GetSaltAndSRPResponse {
   int64 SRPGroup = 2;
 }
 
-message GetSysInfoRequest {
-  int64 key = 1;
-  string publicKeyN = 2;
-  string publicKeyE = 3;
-}
+message GetSysInfoRequest {}
 
 message GetSysInfoResponse {
   message SysInfo {
@@ -64,7 +60,6 @@ message GetSysInfoResponse {
     bytes os = 3;
   }
   SysInfo workerSysInfo = 1;
-  bytes AESKey = 2;
 }
 
 message GetAppsRequest  {}

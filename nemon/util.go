@@ -3,6 +3,7 @@ package nemon
 import (
 	"bytes"
 	"crypto/cipher"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"math/big"
@@ -21,6 +22,8 @@ const initialVector = "1234567890123456"
 const heartbeatInterval = 10 * time.Second
 
 const devHeartbeatInterval = 5 * time.Second
+
+const username = "coordinator"
 
 // default port
 const port = ":8080"
@@ -114,8 +117,33 @@ func InitSystemInfo() {
 	systemInfo.nemonKey = key
 }
 
-// encrypt returns an AES encrypted byte array
 func encrypt(plaintext []byte) []byte {
+	cryptor := systemInfo.Cryptor
+	nonce := make([]byte, cryptor.NonceSize(), cryptor.NonceSize()+len(plaintext)+cryptor.Overhead())
+	if _, err := rand.Read(nonce); err != nil {
+		fmt.Printf("couldn't encrypt: %v\n", err.Error())
+		return nil
+	}
+
+	return cryptor.Seal(nonce, nonce, plaintext, nil)
+}
+
+func decrypt(ciphermsg []byte) []byte {
+	cryptor := systemInfo.Cryptor
+	nonce, ciphertext := ciphermsg[:cryptor.NonceSize()], ciphermsg[cryptor.NonceSize():]
+
+	plaintext, err := cryptor.Open(nil, nonce, ciphertext, nil)
+
+	if err != nil {
+		fmt.Printf("couldn't decrypt: %v\n", err.Error())
+		return nil
+	}
+
+	return plaintext
+}
+
+// encrypt returns an AES encrypted byte array
+func _encrypt(plaintext []byte) []byte {
 	c := systemInfo.AESCipher
 
 	if c == nil {
@@ -131,7 +159,7 @@ func encrypt(plaintext []byte) []byte {
 }
 
 // decrypt returns an AES decrypted byte array
-func decrypt(ciphertext []byte) []byte {
+func _decrypt(ciphertext []byte) []byte {
 	c := systemInfo.AESCipher
 
 	if c == nil {

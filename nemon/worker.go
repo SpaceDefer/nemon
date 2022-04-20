@@ -2,11 +2,6 @@ package nemon
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha512"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -15,11 +10,12 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 
 	pb "nemon/protos"
+
+	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/1Password/srp"
 
@@ -46,7 +42,7 @@ type Worker struct {
 }
 
 func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequest) (*pb.GetSaltAndSRPResponse, error) {
-	fmt.Printf("received getsaltandsrp")
+	fmt.Printf("received getsaltandsrp\n")
 	infoFile, err := os.Open(systemInfo.ConfigDir + "/enrollment_info.gob")
 
 	if err != nil {
@@ -79,7 +75,7 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 }
 
 func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClientProofRequest) (*pb.VerifyClientProofResponse, error) {
-	fmt.Printf("received a request for verification")
+	fmt.Printf("received a request for verification\n")
 	server, serverKey := srpServerInfo.Server, srpServerInfo.ServerKey
 
 	if server == nil || serverKey == nil {
@@ -90,8 +86,7 @@ func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClien
 		return nil, status.Error(codes.InvalidArgument, "bad proof")
 	}
 
-	serverBlock, _ := aes.NewCipher(serverKey)
-	serverCryptor, _ := cipher.NewGCM(serverBlock)
+	serverCryptor, _ := chacha20poly1305.NewX(serverKey)
 
 	systemInfo.Cryptor = serverCryptor
 
@@ -99,7 +94,7 @@ func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClien
 }
 
 func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.ExchangeEphemeralPublicRequest) (*pb.ExchangeEphemeralPublicResponse, error) {
-	fmt.Printf("exchange ephemeral public")
+	fmt.Printf("exchange ephemeral public\n")
 	ABytes := req.A
 	A := new(big.Int)
 	A.SetBytes(ABytes)
@@ -123,17 +118,19 @@ func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.Excha
 
 	serverKey, err := server.Key()
 
-	srpServerInfo.Server, srpServerInfo.ServerKey = server, serverKey
-
 	if err != nil || serverKey == nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	serverProof, err := server.M(salt, "username")
+	srpServerInfo.Server, srpServerInfo.ServerKey = server, serverKey
+
+	serverProof, err := server.M(salt, username)
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, "couldn't make serverProof")
 	}
+
+	fmt.Printf("%v\n%v\n", salt, serverProof)
 
 	return &pb.ExchangeEphemeralPublicResponse{
 		B:           B.Bytes(),
@@ -181,54 +178,18 @@ func (ws *workerServer) SaveEnrollmentInfo(_ context.Context, req *pb.SaveEnroll
 
 // GetSysInfo handles the handshake and connection establishment and sends the Worker's SystemInfo if successful
 func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
-	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("keys not the same, refusing connection\n")
-	}
-
-	var publicKey rsa.PublicKey
-
-	publicKeyN := new(big.Int)
-	var val string
-	val = req.PublicKeyN
-	publicKeyN.SetString(val, 10)
-	publicKey.N = publicKeyN
-	publicKey.E, _ = strconv.Atoi(req.PublicKeyE)
-	AESKey := make([]byte, 32)
-
-	_, err := rand.Read(AESKey)
-
-	if err != nil {
-		return nil, err
-	}
-
-	AESCipher, err := aes.NewCipher(AESKey)
-
-	if err != nil {
-		return nil, err
-	}
-
-	systemInfo.AESCipher = AESCipher
-	systemInfo.AESKey = AESKey
-
-	hash := sha512.New()
-	encAESKey, err := rsa.EncryptOAEP(hash, rand.Reader, &publicKey, AESKey, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	return &pb.GetSysInfoResponse{
 		WorkerSysInfo: &pb.GetSysInfoResponse_SysInfo{
 			Username: encrypt([]byte(systemInfo.username)),
 			Os:       encrypt([]byte(systemInfo.OS)),
 			Hostname: encrypt([]byte(systemInfo.hostname)),
 		},
-		AESKey: encAESKey,
 	}, nil
 }
 
 // GetApps implements GetApps RPC from the generated ProtoBuf file
 func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
-	if systemInfo.AESKey == nil {
+	if systemInfo.Cryptor == nil {
 		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
 	}
 	fmt.Printf("got a GetApps gRPC\n")

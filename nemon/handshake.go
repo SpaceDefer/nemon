@@ -2,76 +2,73 @@ package nemon
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha512"
 	"fmt"
-	"log"
 	"math/big"
-	"strconv"
 	"time"
 
 	pb "nemon/protos"
+
+	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/1Password/srp"
 
 	"google.golang.org/grpc"
 )
 
-// Handshake performs our own handshake protocol with the established connection
-// returns a GetSysInfoResponse struct containing SystemInfo struct of the worker and an AESKey if successful,
-// a WorkerClient for the connection and an error if unsuccessful
+//
+//// Handshake performs our own handshake protocol with the established connection
+//// returns a GetSysInfoResponse struct containing SystemInfo struct of the worker and an AESKey if successful,
+//// a WorkerClient for the connection and an error if unsuccessful
+//func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
+//	client := pb.NewWorkerClient(connection)
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+//
+//	if err != nil {
+//		return nil, nil, err
+//	}
+//
+//	publicKey := privateKey.PublicKey
+//
+//	response, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{
+//		Key:        systemInfo.nemonKey,
+//		PublicKeyN: publicKey.N.String(),
+//		PublicKeyE: strconv.Itoa(publicKey.E),
+//	})
+//
+//	if err != nil {
+//		return nil, nil, err
+//	}
+//
+//	fmt.Printf("%v\n", response)
+//
+//	hash := sha512.New()
+//	AESKey, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, response.AESKey, nil)
+//
+//	AESCipher, err := aes.NewCipher(AESKey)
+//
+//	if err != nil {
+//		return nil, nil, err
+//	}
+//
+//	systemInfo.AESCipher = AESCipher
+//	systemInfo.AESKey = AESKey
+//
+//	if err != nil {
+//		log.Printf("%v\n", err)
+//		if err := connection.Close(); err != nil {
+//			fmt.Printf("can't close connection\n")
+//		}
+//		return nil, nil, err
+//	}
+//	return response, client, nil
+//}
+
 func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
-	client := pb.NewWorkerClient(connection)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	publicKey := privateKey.PublicKey
-
-	response, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{
-		Key:        systemInfo.nemonKey,
-		PublicKeyN: publicKey.N.String(),
-		PublicKeyE: strconv.Itoa(publicKey.E),
-	})
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	fmt.Printf("%v\n", response)
-
-	hash := sha512.New()
-	AESKey, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, response.AESKey, nil)
-
-	AESCipher, err := aes.NewCipher(AESKey)
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	systemInfo.AESCipher = AESCipher
-	systemInfo.AESKey = AESKey
-
-	if err != nil {
-		log.Printf("%v\n", err)
-		if err := connection.Close(); err != nil {
-			fmt.Printf("can't close connection\n")
-		}
-		return nil, nil, err
-	}
-	return response, client, nil
-}
-
-func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
 	client := pb.NewWorkerClient(connection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -95,10 +92,15 @@ func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoRes
 	fmt.Printf("authenitcating\n")
 	err = c.Authentication(client)
 	if err != nil {
-		return nil, nil, nil
+		return nil, nil, err
 	}
-	fmt.Printf("authentication successful\n")
-	return nil, nil, nil
+	fmt.Printf("authentication and verification successful\n")
+
+	sysInfoResponse, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{})
+
+	fmt.Println(sysInfoResponse)
+
+	return sysInfoResponse, client, nil
 }
 
 // Enrollment enrolls the Coordinator with the Worker
@@ -116,7 +118,7 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
 
-	username := "username" // TODO: this can be the product key maybe?
+	//username := "username" // TODO: this can be the product key maybe?
 
 	// save the
 	// password and the
@@ -144,17 +146,16 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 
 func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	// grpc call to request the salt and SRP Group from the Worker
-	authCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	response, err := client.GetSaltAndSRP(authCtx, &pb.GetSaltAndSRPRequest{})
 	group, salt := response.SRPGroup, response.Salt
 	if err != nil {
 		return err
 	}
-	fmt.Printf("salt %v\ngroup %v\n", string(response.Salt), response.SRPGroup)
 	// fetch the master password and secret key (username?) from the sysInfo
-	pw, secretKey := systemInfo.Password, systemInfo.SecretKey
-	x := srp.KDFRFC5054(salt, secretKey, pw)
+	//pw, _ := systemInfo.Password, systemInfo.SecretKey
+	x := srp.KDFRFC5054(salt, username, "temp!")
 
 	srpClient := srp.NewSRPClient(srp.KnownGroups[int(group)], x, nil)
 
@@ -177,9 +178,8 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't make the client key\n%v\n", err.Error())
 	}
 
-	fmt.Printf("authentication successful, continuing with verification...\n")
-
-	if !srpClient.GoodServerProof(salt, "username", serverProof) {
+	fmt.Printf("authentication successful, continuing with verification... %v\n", len(serverProof))
+	if !srpClient.GoodServerProof(salt, username, serverProof) {
 		return fmt.Errorf("bad proof from server")
 	}
 
@@ -197,8 +197,7 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 
 	fmt.Printf("verification successful!\n")
 
-	clientBlock, _ := aes.NewCipher(clientKey)
-	clientCryptor, _ := cipher.NewGCM(clientBlock)
+	clientCryptor, _ := chacha20poly1305.NewX(clientKey)
 
 	systemInfo.Cryptor = clientCryptor
 

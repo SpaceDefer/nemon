@@ -50,6 +50,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 
 	fmt.Printf("handshake was successful with %v\n", ip)
 	workerSysInfo := response.WorkerSysInfo
+	fmt.Printf("%v %v", string(decrypt(workerSysInfo.Username)), string(decrypt(workerSysInfo.Os)))
 	c.mu.Lock()
 	c.workers[ip] = &Worker{
 		ip:         ip,

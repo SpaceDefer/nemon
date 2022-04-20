@@ -1,7 +1,6 @@
 package nemon
 
 import (
-	"bytes"
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
@@ -16,14 +15,20 @@ import (
 	"github.com/1Password/srp"
 )
 
-const initialVector = "1234567890123456"
+/*
+Nemon Core Utility Functions and Structs
+*/
 
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
 const heartbeatInterval = 10 * time.Second
 
 const devHeartbeatInterval = 5 * time.Second
 
+// username for the coordinator (maybe the product key?)
 const username = "coordinator"
+
+// TODO: make a random password, or a fixed, initially random password when we first install
+const pw = "temp!" // change it to random on nemon install, this is dev only (should be nil on the worker!)
 
 // default port
 const port = ":8080"
@@ -65,8 +70,6 @@ type SystemInfo struct {
 	hostname  string
 	username  string
 	nemonKey  int64
-	AESKey    []byte       // deprecate with RSA handshake
-	AESCipher cipher.Block // deprecate with RSA handshake
 	SecretKey string
 	Password  string
 	ConfigDir string
@@ -119,6 +122,7 @@ func InitSystemInfo() {
 
 func encrypt(plaintext []byte) []byte {
 	cryptor := systemInfo.Cryptor
+	// reduces nonce round-trips
 	nonce := make([]byte, cryptor.NonceSize(), cryptor.NonceSize()+len(plaintext)+cryptor.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		fmt.Printf("couldn't encrypt: %v\n", err.Error())
@@ -128,9 +132,9 @@ func encrypt(plaintext []byte) []byte {
 	return cryptor.Seal(nonce, nonce, plaintext, nil)
 }
 
-func decrypt(ciphermsg []byte) []byte {
+func decrypt(msg []byte) []byte {
 	cryptor := systemInfo.Cryptor
-	nonce, ciphertext := ciphermsg[:cryptor.NonceSize()], ciphermsg[cryptor.NonceSize():]
+	nonce, ciphertext := msg[:cryptor.NonceSize()], msg[cryptor.NonceSize():]
 
 	plaintext, err := cryptor.Open(nil, nonce, ciphertext, nil)
 
@@ -142,52 +146,9 @@ func decrypt(ciphermsg []byte) []byte {
 	return plaintext
 }
 
-// encrypt returns an AES encrypted byte array
-func _encrypt(plaintext []byte) []byte {
-	c := systemInfo.AESCipher
-
-	if c == nil {
-		return nil
-	}
-
-	ecb := cipher.NewCBCEncrypter(c, []byte(initialVector))
-	plaintext = PKCS5Padding(plaintext, c.BlockSize())
-	crypted := make([]byte, len(plaintext))
-	ecb.CryptBlocks(crypted, plaintext)
-
-	return crypted
-}
-
-// decrypt returns an AES decrypted byte array
-func _decrypt(ciphertext []byte) []byte {
-	c := systemInfo.AESCipher
-
-	if c == nil {
-		return nil
-	}
-	ecb := cipher.NewCBCDecrypter(c, []byte(initialVector))
-	decrypted := make([]byte, len(ciphertext))
-	ecb.CryptBlocks(decrypted, ciphertext)
-
-	data := PKCS5UnPadding(decrypted)
-	return data
-}
-
-func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
-	padding := blockSize - len(ciphertext)%blockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(ciphertext, padtext...)
-}
-
-func PKCS5UnPadding(encrypt []byte) []byte {
-	if len(encrypt) < 1 {
-		return nil
-	}
-	padding := encrypt[len(encrypt)-1]
-	return encrypt[:len(encrypt)-int(padding)]
-}
-
-// WebSocket Server structs
+/*
+Nemon Websocket API Utility Functions and Structs
+*/
 
 // Type of the WebsocketServer message
 type Type string

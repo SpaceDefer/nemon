@@ -241,9 +241,9 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 
 // DeleteApp handles the deletion of an application on the Worker
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
-	//if systemInfo.AESKey == nil {
-	//	return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
-	//}
+	if systemInfo.Cryptor == nil {
+		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
+	}
 	location := decrypt(req.Location)
 	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
 	switch systemInfo.OS {

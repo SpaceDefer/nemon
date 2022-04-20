@@ -16,58 +16,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-//
-//// Handshake performs our own handshake protocol with the established connection
-//// returns a GetSysInfoResponse struct containing SystemInfo struct of the worker and an AESKey if successful,
-//// a WorkerClient for the connection and an error if unsuccessful
-//func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
-//	client := pb.NewWorkerClient(connection)
-//
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-//
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	publicKey := privateKey.PublicKey
-//
-//	response, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{
-//		Key:        systemInfo.nemonKey,
-//		PublicKeyN: publicKey.N.String(),
-//		PublicKeyE: strconv.Itoa(publicKey.E),
-//	})
-//
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	fmt.Printf("%v\n", response)
-//
-//	hash := sha512.New()
-//	AESKey, err := rsa.DecryptOAEP(hash, rand.Reader, privateKey, response.AESKey, nil)
-//
-//	AESCipher, err := aes.NewCipher(AESKey)
-//
-//	if err != nil {
-//		return nil, nil, err
-//	}
-//
-//	systemInfo.AESCipher = AESCipher
-//	systemInfo.AESKey = AESKey
-//
-//	if err != nil {
-//		log.Printf("%v\n", err)
-//		if err := connection.Close(); err != nil {
-//			fmt.Printf("can't close connection\n")
-//		}
-//		return nil, nil, err
-//	}
-//	return response, client, nil
-//}
-
+// Handshake performs our own handshake protocol (SRP with XChaCha20-Poly1305) with the established connection
+// returns a GetSysInfoResponse struct containing SystemInfo struct of the worker,
+// a WorkerClient for the connection and an error if unsuccessful
 func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResponse, pb.WorkerClient, error) {
 	client := pb.NewWorkerClient(connection)
 
@@ -89,7 +40,7 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 		fmt.Printf("enrollment successful\n")
 	}
 	// authenticate and verify
-	fmt.Printf("authenitcating\n")
+	fmt.Printf("authenticating\n")
 	err = c.Authentication(client)
 	if err != nil {
 		return nil, nil, err
@@ -106,8 +57,6 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 // Enrollment enrolls the Coordinator with the Worker
 func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	group := srp.RFC5054Group3072
-	pw := "temp!" // TODO: make a random password, or a fixed, initially random password when we first install
-
 	enrollmentCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -117,12 +66,6 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	} else if n != 8 {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
-
-	//username := "username" // TODO: this can be the product key maybe?
-
-	// save the
-	// password and the
-	// username in worker(server) sysInfo for later use
 
 	x := srp.KDFRFC5054(salt, username, pw)
 
@@ -145,7 +88,6 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 }
 
 func (c *Coordinator) Authentication(client pb.WorkerClient) error {
-	// grpc call to request the salt and SRP Group from the Worker
 	authCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	response, err := client.GetSaltAndSRP(authCtx, &pb.GetSaltAndSRPRequest{})
@@ -153,9 +95,7 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	if err != nil {
 		return err
 	}
-	// fetch the master password and secret key (username?) from the sysInfo
-	//pw, _ := systemInfo.Password, systemInfo.SecretKey
-	x := srp.KDFRFC5054(salt, username, "temp!")
+	x := srp.KDFRFC5054(salt, username, pw)
 
 	srpClient := srp.NewSRPClient(srp.KnownGroups[int(group)], x, nil)
 
@@ -200,22 +140,5 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	clientCryptor, _ := chacha20poly1305.NewX(clientKey)
 
 	systemInfo.Cryptor = clientCryptor
-
-	//// NEVER use the same nonce twice
-	//nonce := make([]byte, 12)
-	//rand.Read(nonce)
-	//
-	//hello := []byte("hello!!!!!!!")
-	//cipherhello := clientCryptor.Seal(nil, nonce, hello, nil)
-	//
-	//delResponse, err := client.DeleteApp(authCtx, &pb.DeleteAppsRequest{
-	//	Name:     cipherhello,
-	//	Location: cipherhello,
-	//})
-	//if err != nil {
-	//	fmt.Printf("phew\n")
-	//}
-	//fmt.Println(delResponse)
-
 	return nil
 }

@@ -15,4 +15,5 @@
 - [ ] nul directory windows
 - [x] restarting the worker gives a blank list to the coordinator
 - [ ] try to store status (off, on, recon) in the backend too
-- [x] integrate XChaCha20-Poly1305 
+- [x] integrate XChaCha20-Poly1305
+- [ ] decide on the way password `pw` should work

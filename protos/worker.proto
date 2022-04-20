@@ -10,7 +10,14 @@ service Worker  {
   rpc SaveEnrollmentInfo(SaveEnrollmentInfoRequest) returns (SaveEnrollmentInfoResponse);
   rpc GetSaltAndSRP(GetSaltAndSRPRequest) returns (GetSaltAndSRPResponse);
   rpc ExchangeEphemeralPublic(ExchangeEphemeralPublicRequest) returns (ExchangeEphemeralPublicResponse);
+  rpc VerifyClientProof(VerifyClientProofRequest) returns (VerifyClientProofResponse);
 }
+
+message VerifyClientProofRequest {
+  bytes ClientProof = 1;
+}
+
+message VerifyClientProofResponse {}
 
 message ExchangeEphemeralPublicRequest {
   bytes A = 1;
@@ -18,6 +25,7 @@ message ExchangeEphemeralPublicRequest {
 
 message ExchangeEphemeralPublicResponse {
   bytes B = 1;
+  bytes ServerProof = 2;
 }
 
 message IsEnrolledRequest {

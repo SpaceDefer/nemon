@@ -3,6 +3,7 @@ package nemon
 import (
 	"context"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -68,6 +69,7 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 	srpServerInfo = SRPServerInfo{
 		Verifier: verifier,
 		Group:    int(enrollmentInfo.SRPGroup),
+		Salt:     enrollmentInfo.Salt,
 	}
 
 	return &pb.GetSaltAndSRPResponse{
@@ -76,12 +78,32 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 	}, nil
 }
 
+func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClientProofRequest) (*pb.VerifyClientProofResponse, error) {
+	fmt.Printf("received a request for verification")
+	server, serverKey := srpServerInfo.Server, srpServerInfo.ServerKey
+
+	if server == nil || serverKey == nil {
+		return nil, status.Error(codes.Unauthenticated, "srpServer doesn't exist")
+	}
+
+	if !server.GoodClientProof(req.ClientProof) {
+		return nil, status.Error(codes.InvalidArgument, "bad proof")
+	}
+
+	serverBlock, _ := aes.NewCipher(serverKey)
+	serverCryptor, _ := cipher.NewGCM(serverBlock)
+
+	systemInfo.Cryptor = serverCryptor
+
+	return &pb.VerifyClientProofResponse{}, nil
+}
+
 func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.ExchangeEphemeralPublicRequest) (*pb.ExchangeEphemeralPublicResponse, error) {
 	fmt.Printf("exchange ephemeral public")
 	ABytes := req.A
 	A := new(big.Int)
 	A.SetBytes(ABytes)
-	group, verifier := srpServerInfo.Group, srpServerInfo.Verifier
+	salt, group, verifier := srpServerInfo.Salt, srpServerInfo.Group, srpServerInfo.Verifier
 	if verifier == nil {
 		return nil, status.Error(codes.Unauthenticated, "verifier doesn't exist on the worker")
 	}
@@ -101,12 +123,21 @@ func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.Excha
 
 	serverKey, err := server.Key()
 
+	srpServerInfo.Server, srpServerInfo.ServerKey = server, serverKey
+
 	if err != nil || serverKey == nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	serverProof, err := server.M(salt, "username")
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "couldn't make serverProof")
+	}
+
 	return &pb.ExchangeEphemeralPublicResponse{
-		B: B.Bytes(),
+		B:           B.Bytes(),
+		ServerProof: serverProof,
 	}, nil
 }
 
@@ -249,9 +280,9 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 
 // DeleteApp handles the deletion of an application on the Worker
 func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) (*pb.DeleteAppsResponse, error) {
-	if systemInfo.AESKey == nil {
-		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
-	}
+	//if systemInfo.AESKey == nil {
+	//	return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
+	//}
 	location := decrypt(req.Location)
 	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
 	switch systemInfo.OS {

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/1Password/srp"
 )
 
 const initialVector = "1234567890123456"
@@ -60,11 +62,12 @@ type SystemInfo struct {
 	hostname  string
 	username  string
 	nemonKey  int64
-	AESKey    []byte
-	AESCipher cipher.Block
+	AESKey    []byte       // deprecate with RSA handshake
+	AESCipher cipher.Block // deprecate with RSA handshake
 	SecretKey string
 	Password  string
 	ConfigDir string
+	Cryptor   cipher.AEAD
 }
 
 // systemInfo is an instance of SystemInfo
@@ -73,8 +76,11 @@ var systemInfo SystemInfo
 // SRPServerInfo stores the long term persistent info stored on the Worker
 // during the runtime of the program
 type SRPServerInfo struct {
-	Verifier *big.Int
-	Group    int
+	Verifier  *big.Int
+	Group     int
+	Salt      []byte
+	Server    *srp.SRP
+	ServerKey []byte
 }
 
 // srpServerInfo is an instance of SRPServerInfo

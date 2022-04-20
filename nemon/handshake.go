@@ -3,6 +3,7 @@ package nemon
 import (
 	"context"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -83,16 +84,20 @@ func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoRes
 		return nil, nil, err
 	}
 	if !response.Enrolled {
+		fmt.Printf("enrolling\n")
 		err := c.Enrollment(client)
 		if err != nil {
 			return nil, nil, err
 		}
+		fmt.Printf("enrollment successful\n")
 	}
 	// authenticate and verify
+	fmt.Printf("authenitcating\n")
 	err = c.Authentication(client)
 	if err != nil {
 		return nil, nil, nil
 	}
+	fmt.Printf("authentication successful\n")
 	return nil, nil, nil
 }
 
@@ -111,7 +116,7 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
 
-	username := "random" // TODO: this can be the product key maybe?
+	username := "username" // TODO: this can be the product key maybe?
 
 	// save the
 	// password and the
@@ -159,7 +164,7 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	exchangeEphemeralResponse, err := client.ExchangeEphemeralPublic(authCtx, &pb.ExchangeEphemeralPublicRequest{
 		A: A.Bytes(),
 	})
-	BBytes := exchangeEphemeralResponse.B
+	BBytes, serverProof := exchangeEphemeralResponse.B, exchangeEphemeralResponse.ServerProof
 	B := new(big.Int)
 	B.SetBytes(BBytes)
 	if err = srpClient.SetOthersPublic(B); err != nil {
@@ -172,11 +177,46 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't make the client key\n%v\n", err.Error())
 	}
 
+	fmt.Printf("authentication successful, continuing with verification...\n")
+
+	if !srpClient.GoodServerProof(salt, "username", serverProof) {
+		return fmt.Errorf("bad proof from server")
+	}
+
+	clientProof, err := srpClient.ClientProof()
+	if err != nil {
+		return err
+	}
+
+	_, err = client.VerifyClientProof(authCtx, &pb.VerifyClientProofRequest{
+		ClientProof: clientProof,
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("verification successful!\n")
+
+	clientBlock, _ := aes.NewCipher(clientKey)
+	clientCryptor, _ := cipher.NewGCM(clientBlock)
+
+	systemInfo.Cryptor = clientCryptor
+
+	//// NEVER use the same nonce twice
+	//nonce := make([]byte, 12)
+	//rand.Read(nonce)
+	//
+	//hello := []byte("hello!!!!!!!")
+	//cipherhello := clientCryptor.Seal(nil, nonce, hello, nil)
+	//
+	//delResponse, err := client.DeleteApp(authCtx, &pb.DeleteAppsRequest{
+	//	Name:     cipherhello,
+	//	Location: cipherhello,
+	//})
+	//if err != nil {
+	//	fmt.Printf("phew\n")
+	//}
+	//fmt.Println(delResponse)
+
 	return nil
-}
-
-func (c *Coordinator) Verification(client pb.WorkerClient) error {
-	verifCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 }

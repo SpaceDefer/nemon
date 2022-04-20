@@ -20,6 +20,8 @@ import (
 
 	pb "nemon/protos"
 
+	"github.com/1Password/srp"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -54,11 +56,57 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 
 	enrollmentInfo := EnrollmentInfo{}
 
-	decoder.Decode(&enrollmentInfo)
+	err = decoder.Decode(&enrollmentInfo)
+	if err != nil {
+		return nil, err
+	}
 	fmt.Println(enrollmentInfo)
+
+	verifier := new(big.Int)
+	verifier.SetBytes(enrollmentInfo.Verifier)
+
+	srpServerInfo = SRPServerInfo{
+		Verifier: verifier,
+		Group:    int(enrollmentInfo.SRPGroup),
+	}
+
 	return &pb.GetSaltAndSRPResponse{
 		Salt:     enrollmentInfo.Salt,
 		SRPGroup: enrollmentInfo.SRPGroup,
+	}, nil
+}
+
+func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.ExchangeEphemeralPublicRequest) (*pb.ExchangeEphemeralPublicResponse, error) {
+	fmt.Printf("exchange ephemeral public")
+	ABytes := req.A
+	A := new(big.Int)
+	A.SetBytes(ABytes)
+	group, verifier := srpServerInfo.Group, srpServerInfo.Verifier
+	if verifier == nil {
+		return nil, status.Error(codes.Unauthenticated, "verifier doesn't exist on the worker")
+	}
+	server := srp.NewSRPServer(srp.KnownGroups[group], verifier, nil)
+	if server == nil {
+		return nil, status.Error(codes.Internal, "couldn't set up server")
+	}
+
+	if err := server.SetOthersPublic(A); err != nil {
+		return nil, status.Error(codes.Unauthenticated, "malicious A")
+	}
+
+	B := server.EphemeralPublic()
+	if B == nil {
+		return nil, status.Error(codes.Internal, "server couldn't make B")
+	}
+
+	serverKey, err := server.Key()
+
+	if err != nil || serverKey == nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.ExchangeEphemeralPublicResponse{
+		B: B.Bytes(),
 	}, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"log"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -98,7 +99,7 @@ func (c *Coordinator) _Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoRes
 // Enrollment enrolls the Coordinator with the Worker
 func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	group := srp.RFC5054Group3072
-	pw := "temp!" // make a random password
+	pw := "temp!" // TODO: make a random password, or a fixed, initially random password when we first install
 
 	enrollmentCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -110,7 +111,7 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
 
-	username := "random" // random username
+	username := "random" // TODO: this can be the product key maybe?
 
 	// save the
 	// password and the
@@ -141,13 +142,41 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	authCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	response, err := client.GetSaltAndSRP(authCtx, &pb.GetSaltAndSRPRequest{})
+	group, salt := response.SRPGroup, response.Salt
 	if err != nil {
 		return err
 	}
 	fmt.Printf("salt %v\ngroup %v\n", string(response.Salt), response.SRPGroup)
 	// fetch the master password and secret key (username?) from the sysInfo
-	//pw, secretKey := systemInfo.Password, systemInfo.SecretKey
-	//x := srp.KDFRFC5054(response.Salt, secretKey, pw)
+	pw, secretKey := systemInfo.Password, systemInfo.SecretKey
+	x := srp.KDFRFC5054(salt, secretKey, pw)
+
+	srpClient := srp.NewSRPClient(srp.KnownGroups[int(group)], x, nil)
+
+	A := srpClient.EphemeralPublic()
+
+	// TODO: handle different errors and codes
+	exchangeEphemeralResponse, err := client.ExchangeEphemeralPublic(authCtx, &pb.ExchangeEphemeralPublicRequest{
+		A: A.Bytes(),
+	})
+	BBytes := exchangeEphemeralResponse.B
+	B := new(big.Int)
+	B.SetBytes(BBytes)
+	if err = srpClient.SetOthersPublic(B); err != nil {
+		return err
+	}
+
+	clientKey, err := srpClient.Key()
+
+	if err != nil || clientKey == nil {
+		return fmt.Errorf("couldn't make the client key\n%v\n", err.Error())
+	}
 
 	return nil
+}
+
+func (c *Coordinator) Verification(client pb.WorkerClient) error {
+	verifCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 }

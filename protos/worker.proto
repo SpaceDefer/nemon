@@ -9,6 +9,15 @@ service Worker  {
   rpc IsEnrolled(IsEnrolledRequest) returns (IsEnrolledResponse);
   rpc SaveEnrollmentInfo(SaveEnrollmentInfoRequest) returns (SaveEnrollmentInfoResponse);
   rpc GetSaltAndSRP(GetSaltAndSRPRequest) returns (GetSaltAndSRPResponse);
+  rpc ExchangeEphemeralPublic(ExchangeEphemeralPublicRequest) returns (ExchangeEphemeralPublicResponse);
+}
+
+message ExchangeEphemeralPublicRequest {
+  bytes A = 1;
+}
+
+message ExchangeEphemeralPublicResponse {
+  bytes B = 1;
 }
 
 message IsEnrolledRequest {

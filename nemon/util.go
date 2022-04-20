@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"log"
+	"math/big"
 	"net"
 	"os"
 	"strconv"
@@ -68,6 +69,26 @@ type SystemInfo struct {
 
 // systemInfo is an instance of SystemInfo
 var systemInfo SystemInfo
+
+// SRPServerInfo stores the long term persistent info stored on the Worker
+// during the runtime of the program
+type SRPServerInfo struct {
+	Verifier *big.Int
+	Group    int
+}
+
+// srpServerInfo is an instance of SRPServerInfo
+var srpServerInfo SRPServerInfo
+
+// SRPClientInfo stores the srp info on the Coordinator
+// during the runtime of the program
+type SRPClientInfo struct {
+	Verifier *big.Int
+	Group    int
+}
+
+// srpClientInfo is an instance of SRPClientInfo
+var srpClientInfo SRPClientInfo
 
 // InitSystemInfo initialises the SystemInfo struct for the system
 func InitSystemInfo() {

@@ -24,6 +24,7 @@ type WorkerClient interface {
 	IsEnrolled(ctx context.Context, in *IsEnrolledRequest, opts ...grpc.CallOption) (*IsEnrolledResponse, error)
 	SaveEnrollmentInfo(ctx context.Context, in *SaveEnrollmentInfoRequest, opts ...grpc.CallOption) (*SaveEnrollmentInfoResponse, error)
 	GetSaltAndSRP(ctx context.Context, in *GetSaltAndSRPRequest, opts ...grpc.CallOption) (*GetSaltAndSRPResponse, error)
+	ExchangeEphemeralPublic(ctx context.Context, in *ExchangeEphemeralPublicRequest, opts ...grpc.CallOption) (*ExchangeEphemeralPublicResponse, error)
 }
 
 type workerClient struct {
@@ -88,6 +89,15 @@ func (c *workerClient) GetSaltAndSRP(ctx context.Context, in *GetSaltAndSRPReque
 	return out, nil
 }
 
+func (c *workerClient) ExchangeEphemeralPublic(ctx context.Context, in *ExchangeEphemeralPublicRequest, opts ...grpc.CallOption) (*ExchangeEphemeralPublicResponse, error) {
+	out := new(ExchangeEphemeralPublicResponse)
+	err := c.cc.Invoke(ctx, "/Worker/ExchangeEphemeralPublic", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
@@ -98,6 +108,7 @@ type WorkerServer interface {
 	IsEnrolled(context.Context, *IsEnrolledRequest) (*IsEnrolledResponse, error)
 	SaveEnrollmentInfo(context.Context, *SaveEnrollmentInfoRequest) (*SaveEnrollmentInfoResponse, error)
 	GetSaltAndSRP(context.Context, *GetSaltAndSRPRequest) (*GetSaltAndSRPResponse, error)
+	ExchangeEphemeralPublic(context.Context, *ExchangeEphemeralPublicRequest) (*ExchangeEphemeralPublicResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -122,6 +133,9 @@ func (UnimplementedWorkerServer) SaveEnrollmentInfo(context.Context, *SaveEnroll
 }
 func (UnimplementedWorkerServer) GetSaltAndSRP(context.Context, *GetSaltAndSRPRequest) (*GetSaltAndSRPResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSaltAndSRP not implemented")
+}
+func (UnimplementedWorkerServer) ExchangeEphemeralPublic(context.Context, *ExchangeEphemeralPublicRequest) (*ExchangeEphemeralPublicResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExchangeEphemeralPublic not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -244,6 +258,24 @@ func _Worker_GetSaltAndSRP_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_ExchangeEphemeralPublic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExchangeEphemeralPublicRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).ExchangeEphemeralPublic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/ExchangeEphemeralPublic",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).ExchangeEphemeralPublic(ctx, req.(*ExchangeEphemeralPublicRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +306,10 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSaltAndSRP",
 			Handler:    _Worker_GetSaltAndSRP_Handler,
+		},
+		{
+			MethodName: "ExchangeEphemeralPublic",
+			Handler:    _Worker_ExchangeEphemeralPublic_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

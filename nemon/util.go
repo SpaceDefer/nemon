@@ -3,6 +3,7 @@ package nemon
 import (
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"math/big"
@@ -11,8 +12,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/1Password/srp"
+	"golang.org/x/text/unicode/norm"
 )
 
 /*
@@ -144,6 +147,57 @@ func decrypt(msg []byte) []byte {
 	}
 
 	return plaintext
+}
+
+func KDF(salt []byte) *big.Int {
+	p := []byte(PreparePassword(pw))
+
+	u := []byte(PreparePassword(username))
+
+	innerHasher := sha1.New() // #nosec
+	if _, err := innerHasher.Write(u); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := innerHasher.Write([]byte(":")); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := innerHasher.Write(p); err != nil {
+		log.Fatal(err)
+	}
+
+	ih := innerHasher.Sum(nil)
+
+	oHasher := sha1.New() // #nosec
+	if _, err := oHasher.Write(salt); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := oHasher.Write(ih); err != nil {
+		log.Fatal(err)
+	}
+
+	h := oHasher.Sum(nil)
+	x := bigIntFromBytes(h)
+	return x
+}
+
+// bigIntFromBytes converts a byte array to a number.
+func bigIntFromBytes(bytes []byte) *big.Int {
+	result := new(big.Int)
+	for _, b := range bytes {
+		result.Lsh(result, 8)
+		result.Add(result, big.NewInt(int64(b)))
+	}
+	return result
+}
+
+// PreparePassword strips leading and trailing white space
+// and normalizes to unicode NFKD.
+func PreparePassword(s string) string {
+	var out string
+	out = string(norm.NFKD.Bytes([]byte(s)))
+	out = strings.TrimLeftFunc(out, unicode.IsSpace)
+	out = strings.TrimRightFunc(out, unicode.IsSpace)
+	return out
 }
 
 /*

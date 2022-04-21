@@ -67,7 +67,17 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
 
-	x := srp.KDFRFC5054(salt, username, pw)
+	// TODO: REMOVE THIS!
+	x := KDF(salt)
+
+	//str := username + ":" + pw
+
+	//hash := sha256.New()
+	//xBytes := pbkdf2.Key([]byte(str), salt, 4096, 32, sha1.New)
+	//x := new(big.Int)
+	//x.SetBytes(xBytes)
+	//fmt.Println(x)
+	//fmt.Println(_x)
 
 	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
 	if firstClient == nil {

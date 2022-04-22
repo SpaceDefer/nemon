@@ -17,3 +17,4 @@
 - [ ] try to store status (off, on, recon) in the backend too
 - [x] integrate XChaCha20-Poly1305
 - [ ] decide on the way password `pw` should work
+- [ ] status code handling

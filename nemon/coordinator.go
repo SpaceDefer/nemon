@@ -59,8 +59,12 @@ func (c *Coordinator) ListenDeleteApplication() {
 					Location: encrypt([]byte(req.Location)),
 				},
 			)
+			st, ok := status.FromError(err)
+			checkCodeParseOk(ok)
+
 			if err != nil {
-				fmt.Println(err.Error())
+				// TODO: handle various error codes
+				fmt.Println(st.Code())
 				return
 			}
 			fmt.Printf("%v\n", response.Ok)
@@ -92,10 +96,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	// TODO: check if error is session expired. add error codes too, easier to check
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
 	st, ok := status.FromError(err)
-	if !ok {
-		fmt.Printf("cant parse error code\n")
-		return
-	}
+	checkCodeParseOk(ok)
 	if err != nil {
 		fmt.Printf("%v\n", st.Message())
 		if st.Code() == codes.Unauthenticated {

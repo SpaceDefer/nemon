@@ -9,6 +9,8 @@ import (
 
 	pb "nemon/protos"
 
+	"google.golang.org/grpc/status"
+
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/1Password/srp"
@@ -28,9 +30,15 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	response, err := client.IsEnrolled(ctx, &pb.IsEnrolledRequest{
 		Key: systemInfo.nemonKey,
 	})
+	st, ok := status.FromError(err)
+	checkCodeParseOk(ok)
+
 	if err != nil {
+		// TODO: handle various error codes
+		fmt.Println(st.Code())
 		return nil, nil, err
 	}
+
 	if !response.Enrolled {
 		fmt.Printf("enrolling\n")
 		err := c.Enrollment(client)
@@ -48,7 +56,14 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	fmt.Printf("authentication and verification successful\n")
 
 	sysInfoResponse, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{})
+	st, ok = status.FromError(err)
+	checkCodeParseOk(ok)
 
+	if err != nil {
+		// TODO: handle various error codes
+		fmt.Println(st.Code())
+		return nil, nil, err
+	}
 	fmt.Println(sysInfoResponse)
 
 	return sysInfoResponse, client, nil
@@ -67,17 +82,8 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't generate an 8 byte salt")
 	}
 
-	// TODO: REMOVE THIS!
+	// TODO: figure out a KDF
 	x := KDF(salt)
-
-	//str := username + ":" + pw
-
-	//hash := sha256.New()
-	//xBytes := pbkdf2.Key([]byte(str), salt, 4096, 32, sha1.New)
-	//x := new(big.Int)
-	//x.SetBytes(xBytes)
-	//fmt.Println(x)
-	//fmt.Println(_x)
 
 	firstClient := srp.NewSRPClient(srp.KnownGroups[group], x, nil)
 	if firstClient == nil {
@@ -93,6 +99,13 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 		Verifier: v.Bytes(),
 		SRPGroup: int64(group),
 	})
+	st, ok := status.FromError(err)
+	checkCodeParseOk(ok)
+
+	if err != nil {
+		// TODO: handle various error codes
+		fmt.Println(st.Code())
+	}
 
 	return err
 }
@@ -115,6 +128,15 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	exchangeEphemeralResponse, err := client.ExchangeEphemeralPublic(authCtx, &pb.ExchangeEphemeralPublicRequest{
 		A: A.Bytes(),
 	})
+	st, ok := status.FromError(err)
+	checkCodeParseOk(ok)
+
+	if err != nil {
+		// TODO: handle various error codes
+		fmt.Println(st.Code())
+		return err
+	}
+
 	BBytes, serverProof := exchangeEphemeralResponse.B, exchangeEphemeralResponse.ServerProof
 	B := new(big.Int)
 	B.SetBytes(BBytes)
@@ -141,7 +163,12 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	_, err = client.VerifyClientProof(authCtx, &pb.VerifyClientProofRequest{
 		ClientProof: clientProof,
 	})
+	st, ok = status.FromError(err)
+	checkCodeParseOk(ok)
+
 	if err != nil {
+		// TODO: handle various error codes
+		fmt.Println(st.Code())
 		return err
 	}
 

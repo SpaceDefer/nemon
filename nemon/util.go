@@ -43,6 +43,13 @@ func checkError(err error) {
 	}
 }
 
+// checkCodeParseOk helper
+func checkCodeParseOk(ok bool) {
+	if !ok {
+		fmt.Println("couldn't parse the status code")
+	}
+}
+
 // GetLocalIP gets the IP address on the connection
 func GetLocalIP() string {
 

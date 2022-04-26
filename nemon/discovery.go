@@ -29,18 +29,18 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	}
 	address := fmt.Sprintf(ip + port)
 
-	fmt.Printf("%v found\n", ip)
+	Debug(dInfo, "%v found\n", ip)
 	// TODO: global var if big brother installed in .rc
 	connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("error occured %v\n", err.Error())
+		Debug(dInfo, "error occured %v\n", err.Error())
 		return
 	}
 
 	response, client, err := c.Handshake(connection)
 
 	if err != nil {
-		fmt.Printf("handshake was unsuccessful with %v\n", ip)
+		Debug(dInfo, "handshake was unsuccessful with %v\n", ip)
 		if err := connection.Close(); err != nil {
 			return
 		}
@@ -48,9 +48,8 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		return
 	}
 
-	fmt.Printf("handshake was successful with %v\n", ip)
+	Debug(dInfo, "handshake was successful with %v\n", ip)
 	workerSysInfo := response.WorkerSysInfo
-	fmt.Printf("%v %v", string(decrypt(workerSysInfo.Username)), string(decrypt(workerSysInfo.Os)))
 	c.mu.Lock()
 	c.workers[ip] = &Worker{
 		ip:         ip,
@@ -68,7 +67,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 func (c *Coordinator) BroadcastDiscoveryPings() {
 	localIP := GetLocalIP()
 
-	fmt.Printf("\nmy ip: %v\n", localIP)
+	Debug(dInfo, "\nmy ip: %v\n", localIP)
 	vals := strings.Split(localIP, ".")
 	mask := vals[0] + "." + vals[1] + "." + vals[2] + "."
 	//var wg sync.WaitGroup

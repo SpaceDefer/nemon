@@ -42,7 +42,7 @@ type Worker struct {
 }
 
 func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequest) (*pb.GetSaltAndSRPResponse, error) {
-	fmt.Printf("received getsaltandsrp\n")
+	Debug(dInfo, "received getsaltandsrp\n")
 	infoFile, err := os.Open(systemInfo.ConfigDir + "/enrollment_info.gob")
 
 	if err != nil {
@@ -57,7 +57,7 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(enrollmentInfo)
+	Debug(dInfo, "enrollment info: %v\n", enrollmentInfo)
 
 	verifier := new(big.Int)
 	verifier.SetBytes(enrollmentInfo.Verifier)
@@ -75,7 +75,7 @@ func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequ
 }
 
 func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClientProofRequest) (*pb.VerifyClientProofResponse, error) {
-	fmt.Printf("received a request for verification\n")
+	Debug(dInfo, "received a request for verification\n")
 	server, serverKey := srpServerInfo.Server, srpServerInfo.ServerKey
 
 	if server == nil || serverKey == nil {
@@ -94,7 +94,7 @@ func (ws *workerServer) VerifyClientProof(_ context.Context, req *pb.VerifyClien
 }
 
 func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.ExchangeEphemeralPublicRequest) (*pb.ExchangeEphemeralPublicResponse, error) {
-	fmt.Printf("exchange ephemeral public\n")
+	Debug(dInfo, "exchange ephemeral public\n")
 	ABytes := req.A
 	A := new(big.Int)
 	A.SetBytes(ABytes)
@@ -130,7 +130,7 @@ func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.Excha
 		return nil, status.Error(codes.Internal, "couldn't make serverProof")
 	}
 
-	fmt.Printf("%v\n%v\n", salt, serverProof)
+	Debug(dInfo, "%v\n%v\n", salt, serverProof)
 
 	return &pb.ExchangeEphemeralPublicResponse{
 		B:           B.Bytes(),
@@ -158,21 +158,21 @@ func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest)
 
 func (ws *workerServer) SaveEnrollmentInfo(_ context.Context, req *pb.SaveEnrollmentInfoRequest) (*pb.SaveEnrollmentInfoResponse, error) {
 	// persist salt, verifier and SRPGroup, saving the verifier securely
-	fmt.Printf("saving enrollment info\n")
+	Debug(dInfo, "saving enrollment info\n")
 	infoFileLocation := fmt.Sprintf(systemInfo.ConfigDir + "/enrollment_info.gob")
 	infoFile, err := os.Create(infoFileLocation)
 	defer infoFile.Close()
 	if err != nil {
 		return nil, status.Error(codes.Internal, "couldn't create gob file")
 	}
-	fmt.Printf("file created\n")
+	Debug(dInfo, "file created\n")
 	enc := gob.NewEncoder(infoFile)
 	err = enc.Encode(EnrollmentInfo{req.SRPGroup, req.Salt, req.Verifier})
 	if err != nil {
 		return nil, status.Error(codes.Internal, "couldn't encode")
 	}
 
-	fmt.Printf("saved successfully\n")
+	Debug(dInfo, "saved successfully\n")
 	return &pb.SaveEnrollmentInfoResponse{}, nil
 }
 
@@ -192,7 +192,7 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 	if systemInfo.Cryptor == nil {
 		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
 	}
-	fmt.Printf("got a GetApps gRPC\n")
+	Debug(dInfo, "got a GetApps gRPC\n")
 	var err error
 	var out []byte
 	var applications []*pb.GetAppsResponse_ApplicationInfo
@@ -245,18 +245,18 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
 	}
 	location := decrypt(req.Location)
-	fmt.Printf("%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
+	Debug(dInfo, "%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
 	switch systemInfo.OS {
 	case "darwin":
 		out, err := exec.Command("sudo", "rm", "-rf", string(location)).Output()
 		checkError(err)
-		fmt.Printf("%v\n", out)
+		Debug(dInfo, "%v\n", out)
 	case "windows":
 		//out, err := exec.Command("powershell", "-noprofile", "Get-WmiObject").Output()
 	case "linux":
 		out, err := exec.Command("apt", "remove", string(location)).Output()
 		checkError(err)
-		fmt.Printf("%v\n", out)
+		Debug(dInfo, "%v\n", out)
 	default:
 		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
 	}
@@ -274,7 +274,7 @@ func StartWorker() {
 		workerAddr = ip + port
 	}
 
-	fmt.Printf("my ip on the network: %v\nhostname: %v\nusername: %v\n",
+	Debug(dInfo, "my ip on the network: %v\nhostname: %v\nusername: %v\n",
 		ip,
 		systemInfo.hostname,
 		systemInfo.username,
@@ -283,7 +283,7 @@ func StartWorker() {
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {
 		<-sigCh
-		fmt.Printf("\nworker exiting gracefully...\n")
+		Debug(dInfo, "\nworker exiting gracefully...\n")
 		// worker cleanup if needed
 		os.Exit(1)
 	}()
@@ -296,7 +296,7 @@ func StartWorker() {
 	server := workerServer{}
 
 	pb.RegisterWorkerServer(grpcServer, &server)
-	fmt.Printf("starting gRPC server at port %v...\n", port)
+	Debug(dInfo, "starting gRPC server at port %v...\n", port)
 	if err := grpcServer.Serve(conn); err != nil {
 		log.Fatal(err)
 	}

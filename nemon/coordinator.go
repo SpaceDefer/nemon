@@ -42,16 +42,16 @@ func (c *Coordinator) ListenDeleteApplication() {
 			continue
 		}
 		go func(request *DeleteApplicationRequest) {
-			fmt.Printf("received an rpc, going to delete %v on %v at %v\n", req.ApplicationName, req.WorkerIp, req.Location)
+			Debug(dInfo, "received an rpc, going to delete %v on %v at %v\n", req.ApplicationName, req.WorkerIp, req.Location)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			worker := c.workers[req.WorkerIp]
 			if worker == nil {
-				fmt.Printf("didn't find that specific ip\n")
+				Debug(dInfo, "didn't find that specific ip\n")
 				return
 			}
-			fmt.Printf("worker found %v\n", worker)
+			Debug(dInfo, "worker found %v\n", worker)
 			response, err := worker.client.DeleteApp(
 				ctx,
 				&pb.DeleteAppsRequest{
@@ -67,7 +67,7 @@ func (c *Coordinator) ListenDeleteApplication() {
 				fmt.Println(st.Code())
 				return
 			}
-			fmt.Printf("%v\n", response.Ok)
+			Debug(dInfo, "%v\n", response.Ok)
 		}(&req)
 	}
 }
@@ -80,7 +80,7 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	pending := c.pending[ip]
 	if pending >= 4 {
 		// issue an alert
-		fmt.Printf("%v's computer hasn't reponsed in ages\n", ip)
+		Debug(dInfo, "%v's computer hasn't reponsed in ages\n", ip)
 		wsServer.sendWorkerStatus(ip, Offline)
 	}
 }
@@ -98,14 +98,14 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	st, ok := status.FromError(err)
 	checkCodeParseOk(ok)
 	if err != nil {
-		fmt.Printf("%v\n", st.Message())
+		Debug(dInfo, "%v\n", st.Message())
 		if st.Code() == codes.Unauthenticated {
 			// remove worker info currently and start authentication again with handshake
 			delete(c.workers, worker.ip)
 			wsServer.sendWorkerStatus(worker.ip, Reconnecting)
 			go c.SendDiscoveryPing(worker.ip)
 
-			fmt.Printf("restarting auth with ip %v\n", worker.ip)
+			Debug(dInfo, "restarting auth with ip %v\n", worker.ip)
 		}
 		return
 	}
@@ -114,13 +114,13 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
 
-	fmt.Printf("app list received from worker %v\n", worker.ip)
+	Debug(dInfo, "app list received from worker %v\n", worker.ip)
 
 	var ApplicationList []ApplicationInfo
 
 	for _, app := range response.Applications {
 		if !c.allowed[string(decrypt(app.GetName()))] {
-			fmt.Printf(
+			Debug(dInfo,
 				"found an app on %v's at ip [%v] which isn't allowed: %v\n",
 				string(decrypt(response.Username)),
 				worker.ip,
@@ -152,13 +152,13 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 // BroadcastHeartbeats to multiple workers, cycle signifies the heartbeat cycle
 func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 	fmt.Print("\033[H\033[2J")
-	fmt.Printf("heartbeat cycle number %v\n", cycle)
+	Debug(dInfo, "heartbeat cycle number %v\n", cycle)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	workers := c.workers
 
 	for _, worker := range workers {
-		fmt.Printf("coordinator sending a heartbeat to ip %v\n", worker.ip)
+		Debug(dInfo, "coordinator sending a heartbeat to ip %v\n", worker.ip)
 		c.pending[worker.ip]++
 		go c.SendHeartbeat(worker)
 		go c.CheckTimeout(worker.ip, worker.username)
@@ -167,7 +167,7 @@ func (c *Coordinator) BroadcastHeartbeats(cycle int) {
 
 // Cleanup closes the connections in the event of a shutdown
 func (c *Coordinator) Cleanup() {
-	fmt.Printf("running cleanup...\n")
+	Debug(dInfo, "running cleanup...\n")
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, worker := range c.workers {
@@ -182,7 +182,7 @@ func StartCoordinator() {
 	wsServer = &WebsocketServer{}
 	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
-	fmt.Printf("%v started as a coordinator\n", os.Getpid())
+	Debug(dInfo, "%v started as a coordinator\n", os.Getpid())
 	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//checkError(err)
 	coordinator := Coordinator{
@@ -197,7 +197,7 @@ func StartCoordinator() {
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT)
 	go func() {
 		<-sigCh
-		fmt.Printf("\ncoordinator exiting gracefully...\n")
+		Debug(dInfo, "\ncoordinator exiting gracefully...\n")
 		coordinator.Cleanup()
 		wsServer.Cleanup()
 		os.Exit(1)
@@ -213,7 +213,7 @@ func StartCoordinator() {
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers
 	coordinator.mu.Unlock()
-	fmt.Printf("number of workers found: %v\nworkers: %v\n", nWorkers, workers)
+	Debug(dInfo, "number of workers found: %v\nworkers: %v\n", nWorkers, workers)
 	go coordinator.ListenDeleteApplication()
 	if nWorkers >= 0 {
 		cycle := 1

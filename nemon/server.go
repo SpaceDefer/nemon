@@ -35,7 +35,7 @@ func (ws *WebsocketServer) sendWorkerStatus(ip string, status Status) {
 	defer ws.mu.Unlock()
 
 	if ws.conn == nil {
-		fmt.Printf("no client to send data to\n")
+		Debug(dInfo, "no client to send data to\n")
 		return
 	}
 
@@ -57,7 +57,7 @@ func (ws *WebsocketServer) sendAlert(msg string, ip string) {
 	defer ws.mu.Unlock()
 
 	if ws.conn == nil {
-		fmt.Printf("no client to send data to\n")
+		Debug(dInfo, "no client to send data to\n")
 		return
 	}
 	res, err := json.Marshal(&AlertMessage{Type: Alert, Message: msg, WorkerIp: ip})
@@ -74,7 +74,7 @@ func (ws *WebsocketServer) sendAlert(msg string, ip string) {
 func (ws *WebsocketServer) Cleanup() {
 	ws.mu.Lock()
 	ws.mu.Unlock()
-	fmt.Printf("websocket server exiting gracefully...\n")
+	Debug(dInfo, "websocket server exiting gracefully...\n")
 	if ws.conn == nil {
 		return
 	}
@@ -94,7 +94,7 @@ func (ws *WebsocketServer) sendAppList(workerInfo *WorkerInfo) {
 	conn := ws.conn
 
 	if conn == nil {
-		fmt.Printf("no client found\n")
+		Debug(dInfo, "no client found\n")
 		return
 	}
 
@@ -130,7 +130,7 @@ func (ws *WebsocketServer) reader() {
 
 		switch req.Type {
 		case Delete:
-			fmt.Printf("app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
+			Debug(dInfo, "app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
 
 			if !systemInfo.Dev {
 				deleteChan <- req
@@ -149,7 +149,7 @@ func (ws *WebsocketServer) reader() {
 				return
 			}
 		default:
-			fmt.Printf("don't recognise this currently\n")
+			Debug(dInfo, "don't recognise this currently\n")
 		}
 	}
 }

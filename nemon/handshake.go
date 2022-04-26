@@ -40,20 +40,20 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	}
 
 	if !response.Enrolled {
-		fmt.Printf("enrolling\n")
+		Debug(dInfo, "enrolling\n")
 		err := c.Enrollment(client)
 		if err != nil {
 			return nil, nil, err
 		}
-		fmt.Printf("enrollment successful\n")
+		Debug(dInfo, "enrollment successful\n")
 	}
 	// authenticate and verify
-	fmt.Printf("authenticating\n")
+	Debug(dInfo, "authenticating\n")
 	err = c.Authentication(client)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Printf("authentication and verification successful\n")
+	Debug(dInfo, "authentication and verification successful\n")
 
 	sysInfoResponse, err := client.GetSysInfo(ctx, &pb.GetSysInfoRequest{})
 	st, ok = status.FromError(err)
@@ -64,7 +64,7 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 		fmt.Println(st.Code())
 		return nil, nil, err
 	}
-	fmt.Println(sysInfoResponse)
+	Debug(dInfo, "sys info %v\n", sysInfoResponse)
 
 	return sysInfoResponse, client, nil
 }
@@ -150,7 +150,7 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 		return fmt.Errorf("couldn't make the client key\n%v\n", err.Error())
 	}
 
-	fmt.Printf("authentication successful, continuing with verification... %v\n", len(serverProof))
+	Debug(dInfo, "authentication successful, continuing with verification... %v\n", len(serverProof))
 	if !srpClient.GoodServerProof(salt, username, serverProof) {
 		return fmt.Errorf("bad proof from server")
 	}
@@ -172,7 +172,7 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 		return err
 	}
 
-	fmt.Printf("verification successful!\n")
+	Debug(dInfo, "verification successful!\n")
 
 	clientCryptor, _ := chacha20poly1305.NewX(clientKey)
 

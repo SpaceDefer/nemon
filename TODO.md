@@ -16,5 +16,5 @@
 - [x] restarting the worker gives a blank list to the coordinator
 - [ ] try to store status (off, on, recon) in the backend too
 - [x] integrate XChaCha20-Poly1305
-- [ ] decide on the way password `pw` should work
+- [ ] decide on the way password `pw` should work [go-keytar](https://github.com/xenoscopic/go-keytar)
 - [ ] status code handling

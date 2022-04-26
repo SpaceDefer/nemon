@@ -49,22 +49,19 @@ func checkError(err error) {
 type logTopic string
 
 const (
-	dClient  logTopic = "CLNT"
-	dCommit  logTopic = "CMIT"
-	dDrop    logTopic = "DROP"
-	dError   logTopic = "ERRO"
-	dInfo    logTopic = "INFO"
-	dLeader  logTopic = "LEAD"
-	dLog     logTopic = "LOG1"
-	dLog2    logTopic = "LOG2"
-	dPersist logTopic = "PERS"
-	dSnap    logTopic = "SNAP"
-	dTerm    logTopic = "TERM"
-	dTest    logTopic = "TEST"
-	dTimer   logTopic = "TIMR"
-	dTrace   logTopic = "TRCE"
-	dVote    logTopic = "VOTE"
-	dWarn    logTopic = "WARN"
+	dWorker logTopic = "WRKR"
+	dEnc    logTopic = "ENC"
+	dDec    logTopic = "DEC"
+	dApp    logTopic = "APP"
+	dError  logTopic = "ERRO"
+	dInfo   logTopic = "INFO"
+	dLog    logTopic = "LOG1"
+	dLog2   logTopic = "LOG2"
+	dTerm   logTopic = "TERM"
+	dTest   logTopic = "TEST"
+	dTimer  logTopic = "TIMR"
+	dTrace  logTopic = "TRCE"
+	dWarn   logTopic = "WARN"
 )
 
 var debugStart time.Time

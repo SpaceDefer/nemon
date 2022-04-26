@@ -177,7 +177,7 @@ func (ws *workerServer) SaveEnrollmentInfo(_ context.Context, req *pb.SaveEnroll
 }
 
 // GetSysInfo handles the handshake and connection establishment and sends the Worker's SystemInfo if successful
-func (ws *workerServer) GetSysInfo(_ context.Context, req *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
+func (ws *workerServer) GetSysInfo(_ context.Context, _ *pb.GetSysInfoRequest) (*pb.GetSysInfoResponse, error) {
 	return &pb.GetSysInfoResponse{
 		WorkerSysInfo: &pb.GetSysInfoResponse_SysInfo{
 			Username: encrypt([]byte(systemInfo.username)),
@@ -244,6 +244,7 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 	if systemInfo.Cryptor == nil {
 		return nil, status.Error(codes.Unauthenticated, "haven't authenticated yet, please authenticate")
 	}
+	Debug(dEnc, "delete app request %v\n", req)
 	location := decrypt(req.Location)
 	Debug(dInfo, "%v, %v, %v\n", req, string(location), string(decrypt(req.Name)))
 	switch systemInfo.OS {

@@ -18,3 +18,4 @@
 - [x] integrate XChaCha20-Poly1305
 - [ ] decide on the way password `pw` should work [go-keytar](https://github.com/xenoscopic/go-keytar)
 - [ ] status code handling
+- [ ] websocket race

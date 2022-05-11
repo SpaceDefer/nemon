@@ -127,7 +127,7 @@ func (ws *WebsocketServer) reader() {
 			ws.mu.Unlock()
 			break
 		}
-
+		ws.mu.Lock()
 		switch req.Type {
 		case Delete:
 			Debug(dInfo, "app name: %v\ntarget ip: %v\n", req.ApplicationName, req.WorkerIp)
@@ -141,16 +141,19 @@ func (ws *WebsocketServer) reader() {
 				Message: fmt.Sprintf("removed %v successfully!", req.ApplicationName),
 			})
 			if err != nil {
+				ws.mu.Unlock()
 				return
 			}
 
 			if err := ws.conn.WriteMessage(websocket.TextMessage, reply); err != nil {
 				log.Println(err)
+				ws.mu.Unlock()
 				return
 			}
 		default:
 			Debug(dInfo, "don't recognise this currently\n")
 		}
+		ws.mu.Unlock()
 	}
 }
 

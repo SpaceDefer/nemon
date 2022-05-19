@@ -14,7 +14,8 @@
 - [x] way to close the server?
 - [ ] nul directory windows
 - [x] restarting the worker gives a blank list to the coordinator
-- [ ] try to store status (off, on, recon) in the backend too
+- [x] try to store status (off, on, recon) in the backend too
+    - [x] fixed the "offline blip" issue
 - [x] integrate XChaCha20-Poly1305
 - [ ] decide on the way password `pw` should work [go-keytar](https://github.com/xenoscopic/go-keytar)
 - [ ] status code handling

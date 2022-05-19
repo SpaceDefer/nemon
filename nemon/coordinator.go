@@ -81,7 +81,12 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	if pending >= 4 {
 		// issue an alert
 		Debug(dInfo, "%v's computer hasn't reponsed in ages\n", ip)
-		wsServer.sendWorkerStatus(ip, Offline)
+		if c.workers[ip].status == Reconnecting {
+			return
+		}
+		c.workers[ip].status = Offline
+		wsServer.sendWorkerStatus(ip, c.workers[ip].status)
+
 	}
 }
 
@@ -97,24 +102,27 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	response, err := worker.client.GetApps(ctx, &pb.GetAppsRequest{})
 	st, ok := status.FromError(err)
 	checkCodeParseOk(ok)
+
+	ip := worker.ip
 	if err != nil {
 		Debug(dInfo, "%v\n", st.Message())
 		if st.Code() == codes.Unauthenticated {
 			// remove worker info currently and start authentication again with handshake
-			delete(c.workers, worker.ip)
-			wsServer.sendWorkerStatus(worker.ip, Reconnecting)
-			go c.SendDiscoveryPing(worker.ip)
+			c.workers[ip].status = Reconnecting
+			wsServer.sendWorkerStatus(ip, c.workers[ip].status)
+			delete(c.workers, ip)
+			go c.SendDiscoveryPing(ip)
 
-			Debug(dInfo, "restarting auth with ip %v\n", worker.ip)
+			Debug(dInfo, "restarting auth with ip %v\n", ip)
 		}
 		return
 	}
-	c.pending[worker.ip] = 0
+	c.pending[ip] = 0
 
 	c.screenMu.Lock()
 	defer c.screenMu.Unlock()
 
-	Debug(dInfo, "app list received from worker %v\n", worker.ip)
+	Debug(dInfo, "app list received from worker %v\n", ip)
 
 	var ApplicationList []ApplicationInfo
 
@@ -123,7 +131,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 			Debug(dInfo,
 				"found an app on %v's at ip [%v] which isn't allowed: %v\n",
 				string(decrypt(response.Username)),
-				worker.ip,
+				ip,
 				string(decrypt(app.GetName())),
 			)
 
@@ -139,7 +147,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 	wsServer.sendAppList(&WorkerInfo{
 		Type:            Info,
 		ApplicationList: ApplicationList,
-		WorkerIp:        worker.ip,
+		WorkerIp:        ip,
 		Username:        worker.username,
 		Hostname:        worker.hostname,
 		Os:              worker.os,

@@ -22,6 +22,14 @@ import (
 Nemon Core Utility Functions and Structs
 */
 
+type Status string
+
+const (
+	Offline      Status = "offline"
+	Online       Status = "online"
+	Reconnecting Status = "reconnecting"
+)
+
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
 const heartbeatInterval = 10 * time.Second
 

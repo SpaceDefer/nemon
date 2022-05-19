@@ -58,6 +58,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 		username:   string(decrypt(workerSysInfo.Username)),
 		os:         string(decrypt(workerSysInfo.Os)),
 		hostname:   string(decrypt(workerSysInfo.Hostname)),
+		status:     Online,
 	}
 	c.nWorkers++
 	c.mu.Unlock()

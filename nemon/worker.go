@@ -39,6 +39,7 @@ type Worker struct {
 	username   string           // username of the Worker
 	os         string           // os of the Worker
 	hostname   string           // hostname of the Worker
+	status     Status           // status of the Worker
 }
 
 func (ws *workerServer) GetSaltAndSRP(_ context.Context, _ *pb.GetSaltAndSRPRequest) (*pb.GetSaltAndSRPResponse, error) {

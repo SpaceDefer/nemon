@@ -21,14 +21,6 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-type Status string
-
-const (
-	Offline      Status = "offline"
-	Online       Status = "online"
-	Reconnecting Status = "reconnecting"
-)
-
 func (ws *WebsocketServer) sendWorkerStatus(ip string, status Status) {
 	var err error
 	ws.mu.Lock()

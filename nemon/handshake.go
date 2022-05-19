@@ -9,6 +9,7 @@ import (
 
 	pb "nemon/protos"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"golang.org/x/crypto/chacha20poly1305"
@@ -36,6 +37,10 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	if err != nil {
 		// TODO: handle various error codes
 		fmt.Println(st.Code())
+		switch st.Code() {
+		case codes.PermissionDenied:
+			// trigger an event if keys not same
+		}
 		return nil, nil, err
 	}
 
@@ -60,7 +65,6 @@ func (c *Coordinator) Handshake(connection *grpc.ClientConn) (*pb.GetSysInfoResp
 	checkCodeParseOk(ok)
 
 	if err != nil {
-		// TODO: handle various error codes
 		fmt.Println(st.Code())
 		return nil, nil, err
 	}
@@ -105,6 +109,11 @@ func (c *Coordinator) Enrollment(client pb.WorkerClient) error {
 	if err != nil {
 		// TODO: handle various error codes
 		fmt.Println(st.Code())
+		switch st.Code() {
+		case codes.Internal:
+			// event cleanup
+			break
+		}
 	}
 
 	return err
@@ -134,6 +143,12 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	if err != nil {
 		// TODO: handle various error codes
 		fmt.Println(st.Code())
+		switch st.Code() {
+		case codes.Unauthenticated:
+			break
+		case codes.Internal:
+			break
+		}
 		return err
 	}
 
@@ -169,6 +184,12 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	if err != nil {
 		// TODO: handle various error codes
 		fmt.Println(st.Code())
+		switch st.Code() {
+		case codes.Unauthenticated:
+			break
+		case codes.InvalidArgument:
+			break
+		}
 		return err
 	}
 

@@ -141,7 +141,7 @@ func (ws *workerServer) ExchangeEphemeralPublic(_ context.Context, req *pb.Excha
 
 func (ws *workerServer) IsEnrolled(_ context.Context, req *pb.IsEnrolledRequest) (*pb.IsEnrolledResponse, error) {
 	if req.Key != systemInfo.nemonKey {
-		return nil, fmt.Errorf("keys not the same, refusing connection\n")
+		return nil, status.Error(codes.PermissionDenied, "keys not the same, refusing connection\n")
 	}
 
 	// check if persistently stored enrollment info

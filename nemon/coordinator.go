@@ -81,7 +81,7 @@ func (c *Coordinator) CheckTimeout(ip string, username string) {
 	if pending >= 4 {
 		// issue an alert
 		Debug(dInfo, "%v's computer hasn't reponsed in ages\n", ip)
-		if c.workers[ip].status == Reconnecting {
+		if c.workers[ip] != nil && c.workers[ip].status == Reconnecting {
 			return
 		}
 		c.workers[ip].status = Offline

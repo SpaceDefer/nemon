@@ -110,7 +110,7 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 			// remove worker info currently and start authentication again with handshake
 			c.workers[ip].status = Reconnecting
 			wsServer.sendWorkerStatus(ip, c.workers[ip].status)
-			delete(c.workers, ip)
+			//delete(c.workers, ip)
 			go c.SendDiscoveryPing(ip)
 
 			Debug(dInfo, "restarting auth with ip %v\n", ip)
@@ -225,12 +225,17 @@ func StartCoordinator() {
 	go coordinator.ListenDeleteApplication()
 	if nWorkers >= 0 {
 		cycle := 1
-		for cycle < 100 {
-			coordinator.BroadcastHeartbeats(cycle)
+		for cycle < 105 {
 			if systemInfo.Dev {
-				time.Sleep(devHeartbeatInterval)
+				if cycle%devDiscoveryPeriod == 0 {
+					coordinator.BroadcastDiscoveryPings()
+				}
+				coordinator.BroadcastHeartbeats(cycle)
 			} else {
-				time.Sleep(heartbeatInterval)
+				if cycle%discoveryPeriod == 0 {
+					coordinator.BroadcastDiscoveryPings()
+				}
+				coordinator.BroadcastHeartbeats(cycle)
 			}
 			cycle++
 		}

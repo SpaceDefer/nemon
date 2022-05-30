@@ -35,6 +35,10 @@ const heartbeatInterval = 10 * time.Second
 
 const devHeartbeatInterval = 5 * time.Second
 
+const discoveryPeriod = 10
+
+const devDiscoveryPeriod = 5
+
 // view debug statements
 const debug = true
 
@@ -156,9 +160,6 @@ type SRPClientInfo struct {
 	Group    int
 }
 
-// srpClientInfo is an instance of SRPClientInfo
-var srpClientInfo SRPClientInfo
-
 // InitSystemInfo initialises the SystemInfo struct for the system
 func InitSystemInfo() {
 	systemInfo.OS = os.Getenv("OS")
@@ -267,6 +268,7 @@ const (
 	Info        Type = "INF" // Send Info to the WebsocketServer client
 	Delete      Type = "DEL" // Delete application
 	Acknowledge Type = "ACK" // Acknowledge a message sent or received
+	Discovery   Type = "DIS" // Let the client know that discovery is being performed
 )
 
 type AlertMessage struct {
@@ -302,6 +304,8 @@ type EnrollmentInfo struct {
 	Verifier []byte
 }
 
+// TODO: refactor all of this bs
+
 type DeleteApplicationReply struct {
 	Type    Type   `json:"type"`
 	Ok      bool   `json:"ok"`
@@ -312,4 +316,9 @@ type WorkerStatusMessage struct {
 	Type     Type   `json:"type"`
 	WorkerIp string `json:"workerIp"`
 	Status   Status `json:"status"`
+}
+
+type DiscoveryNotificationMessage struct {
+	Type    Type   `json:"type"`
+	Message string `json:"message"`
 }

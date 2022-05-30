@@ -21,6 +21,29 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+func (ws *WebsocketServer) sendDiscoveryNotification() {
+	var err error
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+
+	if ws.conn == nil {
+		Debug(dInfo, "no client to send data to\n")
+		return
+	}
+
+	res, err := json.Marshal(&DiscoveryNotificationMessage{
+		Type:    Discovery,
+		Message: "Discovering over the network",
+	})
+	if err != nil {
+		return
+	}
+	if err = ws.conn.WriteMessage(websocket.TextMessage, res); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
 func (ws *WebsocketServer) sendWorkerStatus(ip string, status Status) {
 	var err error
 	ws.mu.Lock()

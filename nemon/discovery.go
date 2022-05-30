@@ -67,7 +67,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 // BroadcastDiscoveryPings to available IP addresses on the network
 func (c *Coordinator) BroadcastDiscoveryPings() {
 	localIP := GetLocalIP()
-
+	wsServer.sendDiscoveryNotification()
 	Debug(dInfo, "\nmy ip: %v\n", localIP)
 	vals := strings.Split(localIP, ".")
 	mask := vals[0] + "." + vals[1] + "." + vals[2] + "."

@@ -21,3 +21,5 @@
 - [x] status code handling
     - [ ] think about what to do with each event
 - [x] websocket race (hopefully done, check again if it breaks)
+- [x] discovery period
+    - [x] send a notif to the app about the discovery process

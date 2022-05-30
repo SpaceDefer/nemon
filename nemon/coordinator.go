@@ -218,17 +218,19 @@ func StartCoordinator() {
 	if nWorkers >= 0 {
 		cycle := 1
 		for cycle < 105 {
-			// TODO: figure out how to do this in 2 separate threads etc.
+			// TODO: figure out how to do this in 2 separate goroutines etc.
 			if systemInfo.Dev {
 				if cycle%devDiscoveryPeriod == 0 {
 					coordinator.SendDiscoveryPing("localhost")
 				}
 				coordinator.BroadcastHeartbeats(cycle)
+				time.Sleep(devHeartbeatInterval)
 			} else {
 				if cycle%discoveryPeriod == 0 {
 					coordinator.BroadcastDiscoveryPings()
 				}
 				coordinator.BroadcastHeartbeats(cycle)
+				time.Sleep(heartbeatInterval)
 			}
 			cycle++
 		}

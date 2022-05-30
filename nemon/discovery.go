@@ -33,7 +33,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 	// TODO: global var if big brother installed in .rc
 	connection, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		Debug(dInfo, "error occured %v\n", err.Error())
+		Debug(dInfo, "error occurred %v\n", err.Error())
 		return
 	}
 
@@ -67,6 +67,7 @@ func (c *Coordinator) SendDiscoveryPing(ip string) {
 // BroadcastDiscoveryPings to available IP addresses on the network
 func (c *Coordinator) BroadcastDiscoveryPings() {
 	localIP := GetLocalIP()
+	Debug(dInfo, "sending discovery pings over the network\n")
 	wsServer.sendDiscoveryNotification()
 	Debug(dInfo, "\nmy ip: %v\n", localIP)
 	vals := strings.Split(localIP, ".")

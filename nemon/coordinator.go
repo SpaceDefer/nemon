@@ -209,6 +209,12 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
+	if systemInfo.Dev {
+		coordinator.SendDiscoveryPing("localhost")
+	} else {
+		coordinator.BroadcastDiscoveryPings()
+	}
+
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers

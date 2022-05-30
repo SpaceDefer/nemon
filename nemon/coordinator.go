@@ -191,8 +191,6 @@ func StartCoordinator() {
 	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
 	Debug(dInfo, "%v started as a coordinator\n", os.Getpid())
-	//connection, err := grpc.Dial("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//checkError(err)
 	coordinator := Coordinator{
 		workers:  map[string]*Worker{},
 		nWorkers: 0,
@@ -211,12 +209,6 @@ func StartCoordinator() {
 		os.Exit(1)
 	}()
 
-	if systemInfo.Dev {
-		coordinator.SendDiscoveryPing("localhost")
-	} else {
-		coordinator.BroadcastDiscoveryPings()
-	}
-
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers
@@ -226,9 +218,10 @@ func StartCoordinator() {
 	if nWorkers >= 0 {
 		cycle := 1
 		for cycle < 105 {
+			// TODO: figure out how to do this in 2 separate threads etc.
 			if systemInfo.Dev {
 				if cycle%devDiscoveryPeriod == 0 {
-					coordinator.BroadcastDiscoveryPings()
+					coordinator.SendDiscoveryPing("localhost")
 				}
 				coordinator.BroadcastHeartbeats(cycle)
 			} else {

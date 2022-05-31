@@ -35,9 +35,9 @@ const heartbeatInterval = 10 * time.Second
 
 const devHeartbeatInterval = 5 * time.Second
 
-const discoveryPeriod = 10
+const discoveryPeriod = 10 * heartbeatInterval
 
-const devDiscoveryPeriod = 5
+const devDiscoveryPeriod = 5 * devHeartbeatInterval
 
 // view debug statements
 const debug = true

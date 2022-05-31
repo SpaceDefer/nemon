@@ -18,12 +18,14 @@ import (
 
 // Coordinator struct implements the coordinator
 type Coordinator struct {
-	workers  map[string]*Worker // workers map ip addresses to Worker structs
-	nWorkers uint               // nWorkers gives the number of workers
-	allowed  map[string]bool    // list of all allowed applications
-	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
-	screenMu sync.Mutex         // screenMu to print on the screen exclusively
-	pending  map[string]uint    // pending checks if a request to a Worker is pending
+	workers     map[string]*Worker // workers map ip addresses to Worker structs
+	nWorkers    uint               // nWorkers gives the number of workers
+	allowed     map[string]bool    // list of all allowed applications
+	mu          sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
+	screenMu    sync.Mutex         // screenMu to print on the screen exclusively
+	discoveryMu sync.Mutex         // discoveryMu to exclusively discover or send heartbeats
+	pending     map[string]uint    // pending checks if a request to a Worker is pending
+	stopCh      chan bool          // stopCh blocking receive to stop the main process
 }
 
 // deleteChan sends DeleteApplicationRequest's from the wsServer to ListenDeleteApplication goroutine
@@ -210,11 +212,14 @@ func StartCoordinator() {
 	}()
 
 	if systemInfo.Dev {
+		Debug(dInfo, "sending discovery pings over ports\n")
+		wsServer.sendDiscoveryNotification()
 		coordinator.SendDiscoveryPing("localhost")
 	} else {
 		coordinator.BroadcastDiscoveryPings()
 	}
 
+	coordinator.stopCh = make(chan bool, 1)
 	coordinator.mu.Lock()
 	nWorkers := coordinator.nWorkers
 	workers := coordinator.workers
@@ -222,23 +227,43 @@ func StartCoordinator() {
 	Debug(dInfo, "number of workers found: %v\nworkers: %v\n", nWorkers, workers)
 	go coordinator.ListenDeleteApplication()
 	if nWorkers >= 0 {
-		cycle := 1
-		for cycle < 105 {
-			// TODO: figure out how to do this in 2 separate goroutines etc.
-			if systemInfo.Dev {
-				if cycle%devDiscoveryPeriod == 0 {
-					coordinator.SendDiscoveryPing("localhost")
-				}
-				coordinator.BroadcastHeartbeats(cycle)
-				time.Sleep(devHeartbeatInterval)
-			} else {
-				if cycle%discoveryPeriod == 0 {
-					coordinator.BroadcastDiscoveryPings()
-				}
-				coordinator.BroadcastHeartbeats(cycle)
-				time.Sleep(heartbeatInterval)
-			}
-			cycle++
+		go coordinator.HeartbeatRoutine()
+		go coordinator.DiscoveryRoutine()
+	}
+	<-coordinator.stopCh
+}
+
+func (c *Coordinator) DiscoveryRoutine() {
+	for {
+		if systemInfo.Dev {
+			time.Sleep(devDiscoveryPeriod)
+		} else {
+			time.Sleep(discoveryPeriod)
+		}
+		c.discoveryMu.Lock()
+		if systemInfo.Dev {
+			Debug(dInfo, "sending discovery pings over ports\n")
+			wsServer.sendDiscoveryNotification()
+			c.SendDiscoveryPing("localhost")
+		} else {
+			c.BroadcastDiscoveryPings()
+		}
+		c.discoveryMu.Unlock()
+	}
+}
+
+func (c *Coordinator) HeartbeatRoutine() {
+	cycle := 0
+	for cycle < 100 {
+		c.discoveryMu.Lock()
+		c.BroadcastHeartbeats(cycle)
+		cycle++
+		c.discoveryMu.Unlock()
+		if systemInfo.Dev {
+			time.Sleep(devHeartbeatInterval)
+		} else {
+			time.Sleep(heartbeatInterval)
 		}
 	}
+	c.stopCh <- true
 }

@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-
 	pb "nemon/protos"
 
 	"github.com/martinlindhe/notify"
@@ -235,7 +234,42 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 			}
 		}
 	case "linux":
-		out, err = exec.Command("apt", "list", "--installed").Output()
+		pwd, err := os.Getwd()
+		checkError(err)
+		out, err := exec.Command("python3", pwd+"/nemon/scripts/getListLinux.py").Output()
+		
+		checkError(err)
+		list := string(out)
+		res := strings.Split(list, "\t")
+		
+		temp := "";
+		var data []string
+		for i:=0;i<len(res[0]);i++{
+			
+			temp += string(res[0][i])
+			if string(res[0][i]) == " "{
+				// if strings.Contains(temp,"."){
+				// 	temp = ""
+				// 	continue
+
+				// }
+				data = append(data,temp)
+				temp = ""
+			}
+
+		}
+		fmt.Println(data[2])
+		
+		for i := 0; i < len(data); i++ {
+			str := data[i]
+			if len(str) > 3 {
+				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{
+					Name:     encrypt([]byte(str)),
+					Location: encrypt([]byte("/")),
+				})
+			}
+		}
+		
 	default:
 		return nil, fmt.Errorf("unrecognised os %v", systemInfo.OS)
 	}

@@ -166,7 +166,10 @@ func (ws *WebsocketServer) reader() {
 				return
 			}
 		case Notify:
-			notificationChan <- NotifyRequest{req.WorkerIp}
+			Debug(dInfo, "notifying\n")
+			var notificationReq NotifyRequest
+			notificationReq.WorkerIp = req.WorkerIp
+			notificationChan <- notificationReq
 		default:
 			Debug(dInfo, "don't recognise this currently\n")
 		}

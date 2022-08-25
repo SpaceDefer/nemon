@@ -38,9 +38,11 @@ var wsServer *WebsocketServer
 
 func (c *Coordinator) ListenNotification() {
 	for {
+		Debug(dInfo, "notified")
 		var req NotifyRequest
 		req, ok := <-notificationChan
 
+		Debug(dInfo, "notified")
 		if !ok {
 			fmt.Println("nch error")
 			continue
@@ -229,6 +231,7 @@ func StartCoordinator() {
 	wsServer = &WebsocketServer{}
 	wsServer.StartServer()
 	deleteChan = make(chan DeleteApplicationRequest)
+	notificationChan = make(chan NotifyRequest)
 	Debug(dInfo, "%v started as a coordinator\n", os.Getpid())
 	coordinator := Coordinator{
 		workers:  map[string]*Worker{},

@@ -18,14 +18,14 @@ import (
 
 // Coordinator struct implements the coordinator
 type Coordinator struct {
-	workers     map[string]*Worker // workers map ip addresses to Worker structs
-	nWorkers    uint               // nWorkers gives the number of workers
-	allowed     map[string]bool    // list of all allowed applications
-	mu          sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
-	screenMu    sync.Mutex         // screenMu to print on the screen exclusively
-	discoveryMu sync.Mutex         // discoveryMu to exclusively discover or send heartbeats
-	pending     map[string]uint    // pending checks if a request to a Worker is pending
-	stopCh      chan bool          // stopCh blocking receive to stop the main process
+	workers  map[string]*Worker // workers map ip addresses to Worker structs
+	nWorkers uint               // nWorkers gives the number of workers
+	allowed  map[string]bool    // list of all allowed applications
+	mu       sync.Mutex         // mu mutex to prevent data races in the Coordinator's data
+	//screenMu    sync.Mutex         // screenMu to print on the screen exclusively
+	discoveryMu sync.Mutex      // discoveryMu to exclusively discover or send heartbeats
+	pending     map[string]uint // pending checks if a request to a Worker is pending
+	stopCh      chan bool       // stopCh blocking receive to stop the main process
 }
 
 // deleteChan sends DeleteApplicationRequest's from the wsServer to ListenDeleteApplication goroutine
@@ -120,9 +120,6 @@ func (c *Coordinator) SendHeartbeat(worker *Worker) {
 		return
 	}
 	c.pending[ip] = 0
-
-	c.screenMu.Lock()
-	defer c.screenMu.Unlock()
 
 	Debug(dInfo, "app list received from worker %v\n", ip)
 

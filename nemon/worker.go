@@ -254,7 +254,11 @@ func (ws *workerServer) DeleteApp(_ context.Context, req *pb.DeleteAppsRequest) 
 		checkError(err)
 		Debug(dInfo, "%v\n", out)
 	case "windows":
-		//out, err := exec.Command("powershell", "-noprofile", "Get-WmiObject").Output()
+		pwd, err := os.Getwd()
+		_, err = exec.Command("python",
+			pwd+"\\nemon\\scripts\\getAppListWindows.py",
+			string(decrypt(req.GetName()))).Output()
+		checkError(err)
 	case "linux":
 		out, err := exec.Command("apt", "remove", string(location)).Output()
 		checkError(err)

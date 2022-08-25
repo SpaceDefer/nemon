@@ -13,5 +13,8 @@ else:
 
 winapps = sys.modules[name]
 
-for app in winapps.list_installed():
-    print(app.name)
+
+try:
+    winapps.uninstall(sys.argv[1], args=['/S'])
+except:
+    sys.exit("app couldnt be uninstalled")

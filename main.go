@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"runtime"
 	"strings"
 
@@ -34,11 +33,11 @@ func Init() error {
 	if err != nil {
 		return err
 	}
-	currentUser, err := user.Current()
+	//currentUser, err := user.Current()
 	if err != nil {
 		return err
 	}
-	username := currentUser.Username
+	username := os.Getenv("SUDO_USER")
 	if err = os.Setenv("MODE", *mode); err != nil {
 		return err
 	}

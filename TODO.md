@@ -1,8 +1,8 @@
 # TODO
 
 - [x] move to gRPC
-- [ ] cross-platform workers
-- [ ] pick a way to remove apps: render them unusable or complete uninstall (can be different for different platforms)
+- [x] cross-platform workers
+- [x] pick a way to remove apps: render them unusable or complete uninstall (can be different for different platforms)
 - [x] timeout
 - [x] "uninstall" goroutines
 - [x] key for a coordinator and the workers with that key respond to that coordinator (high priority)
@@ -12,7 +12,7 @@
 - [x] integrate tls-srp (1password lib) (high priority, but later)
 - [x] push an alert over websockets on an alert (high)
 - [x] way to close the server?
-- [ ] nul directory windows
+- [x] nul directory windows
 - [x] restarting the worker gives a blank list to the coordinator
 - [x] try to store status (off, on, recon) in the backend too
     - [x] fixed the "offline blip" issue

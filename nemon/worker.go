@@ -206,12 +206,16 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 		for _, str := range r {
 			if len(str) > 0 {
 				toAppend := strings.Split(str, "/")
+				splittedName := toAppend[len(toAppend)-1]
+				removedExtensionName := strings.Split(splittedName, ".")
+				name := removedExtensionName[len(removedExtensionName)-2]
 				applications = append(applications, &pb.GetAppsResponse_ApplicationInfo{
-					Name:     encrypt([]byte(toAppend[len(toAppend)-1])),
+					Name:     encrypt([]byte(name)),
 					Location: encrypt([]byte(str)),
 				})
 			}
 		}
+
 	case "windows":
 		pwd, err := os.Getwd()
 		checkError(err)

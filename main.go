@@ -33,10 +33,6 @@ func Init() error {
 	if err != nil {
 		return err
 	}
-	//currentUser, err := user.Current()
-	if err != nil {
-		return err
-	}
 	username := os.Getenv("SUDO_USER")
 	if err = os.Setenv("MODE", *mode); err != nil {
 		return err

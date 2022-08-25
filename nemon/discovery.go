@@ -76,11 +76,9 @@ func (c *Coordinator) BroadcastDiscoveryPings() {
 	for i := 0; i < 256; i++ {
 		ip := mask + strconv.Itoa(i)
 		//wg.Add(1)
-		// maybe we can show how fast multithreading is here in the slides?
 		if ip != localIP {
 			go func(IP string) {
 				c.SendDiscoveryPing(IP)
-				//wg.Done()
 			}(ip)
 		}
 	}

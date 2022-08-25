@@ -15,6 +15,8 @@ import (
 
 	pb "nemon/protos"
 
+	"github.com/martinlindhe/notify"
+
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/1Password/srp"
@@ -242,6 +244,16 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 		Username:     encrypt([]byte(systemInfo.username)),
 	}
 	return response, nil
+}
+
+func (ws *workerServer) NotifyWorker(_ context.Context, req *pb.NotifyRequest) (*pb.NotifyResponse, error) {
+	if systemInfo.Cryptor == nil {
+		return nil, status.Error(codes.Unauthenticated, "haven't auth yet, please auth")
+	}
+	Debug(dInfo, "go a notif %v", req)
+
+	notify.Notify("nemon", "Please come to the desk", "", "")
+	return &pb.NotifyResponse{}, nil
 }
 
 // DeleteApp handles the deletion of an application on the Worker

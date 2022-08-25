@@ -165,6 +165,8 @@ func (ws *WebsocketServer) reader() {
 				ws.mu.Unlock()
 				return
 			}
+		case Notify:
+			notificationChan <- NotifyRequest{req.WorkerIp}
 		default:
 			Debug(dInfo, "don't recognise this currently\n")
 		}

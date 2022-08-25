@@ -26,6 +26,7 @@ type WorkerClient interface {
 	GetSaltAndSRP(ctx context.Context, in *GetSaltAndSRPRequest, opts ...grpc.CallOption) (*GetSaltAndSRPResponse, error)
 	ExchangeEphemeralPublic(ctx context.Context, in *ExchangeEphemeralPublicRequest, opts ...grpc.CallOption) (*ExchangeEphemeralPublicResponse, error)
 	VerifyClientProof(ctx context.Context, in *VerifyClientProofRequest, opts ...grpc.CallOption) (*VerifyClientProofResponse, error)
+	Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (*NotifyResponse, error)
 }
 
 type workerClient struct {
@@ -108,6 +109,15 @@ func (c *workerClient) VerifyClientProof(ctx context.Context, in *VerifyClientPr
 	return out, nil
 }
 
+func (c *workerClient) Notify(ctx context.Context, in *NotifyRequest, opts ...grpc.CallOption) (*NotifyResponse, error) {
+	out := new(NotifyResponse)
+	err := c.cc.Invoke(ctx, "/Worker/Notify", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkerServer is the server API for Worker service.
 // All implementations must embed UnimplementedWorkerServer
 // for forward compatibility
@@ -120,6 +130,7 @@ type WorkerServer interface {
 	GetSaltAndSRP(context.Context, *GetSaltAndSRPRequest) (*GetSaltAndSRPResponse, error)
 	ExchangeEphemeralPublic(context.Context, *ExchangeEphemeralPublicRequest) (*ExchangeEphemeralPublicResponse, error)
 	VerifyClientProof(context.Context, *VerifyClientProofRequest) (*VerifyClientProofResponse, error)
+	Notify(context.Context, *NotifyRequest) (*NotifyResponse, error)
 	mustEmbedUnimplementedWorkerServer()
 }
 
@@ -150,6 +161,9 @@ func (UnimplementedWorkerServer) ExchangeEphemeralPublic(context.Context, *Excha
 }
 func (UnimplementedWorkerServer) VerifyClientProof(context.Context, *VerifyClientProofRequest) (*VerifyClientProofResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyClientProof not implemented")
+}
+func (UnimplementedWorkerServer) Notify(context.Context, *NotifyRequest) (*NotifyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Notify not implemented")
 }
 func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
@@ -308,6 +322,24 @@ func _Worker_VerifyClientProof_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Worker_Notify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServer).Notify(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Worker/Notify",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServer).Notify(ctx, req.(*NotifyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +378,10 @@ var Worker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyClientProof",
 			Handler:    _Worker_VerifyClientProof_Handler,
+		},
+		{
+			MethodName: "Notify",
+			Handler:    _Worker_Notify_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

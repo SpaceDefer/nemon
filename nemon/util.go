@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -31,11 +32,11 @@ const (
 )
 
 // heartbeatInterval is the duration the Coordinator waits to send RPCs
-const heartbeatInterval = 10 * time.Second
+const heartbeatInterval = 2 * time.Second
 
 const devHeartbeatInterval = 5 * time.Second
 
-const discoveryPeriod = 10 * heartbeatInterval
+const discoveryPeriod = 4 * heartbeatInterval
 
 const devDiscoveryPeriod = 5 * devHeartbeatInterval
 
@@ -135,6 +136,7 @@ type SystemInfo struct {
 	Password  string
 	ConfigDir string
 	Cryptor   cipher.AEAD
+	mu        sync.Mutex
 }
 
 // systemInfo is an instance of SystemInfo
@@ -191,7 +193,9 @@ func encrypt(plaintext []byte) []byte {
 }
 
 func decrypt(msg []byte) []byte {
+	systemInfo.mu.Lock()
 	cryptor := systemInfo.Cryptor
+	systemInfo.mu.Unlock()
 	nonce, ciphertext := msg[:cryptor.NonceSize()], msg[cryptor.NonceSize():]
 
 	plaintext, err := cryptor.Open(nil, nonce, ciphertext, nil)
@@ -269,11 +273,16 @@ const (
 	Delete      Type = "DEL" // Delete application
 	Acknowledge Type = "ACK" // Acknowledge a message sent or received
 	Discovery   Type = "DIS" // Let the client know that discovery is being performed
+	Notify      Type = "NOT" // Notify the worker
 )
 
 type AlertMessage struct {
 	Type     Type   `json:"type"`
 	Message  string `json:"message"`
+	WorkerIp string `json:"workerIp"`
+}
+
+type NotifyRequest struct {
 	WorkerIp string `json:"workerIp"`
 }
 

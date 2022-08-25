@@ -196,7 +196,8 @@ func (c *Coordinator) Authentication(client pb.WorkerClient) error {
 	Debug(dInfo, "verification successful!\n")
 
 	clientCryptor, _ := chacha20poly1305.NewX(clientKey)
-
+	systemInfo.mu.Lock()
+	defer systemInfo.mu.Unlock()
 	systemInfo.Cryptor = clientCryptor
 	return nil
 }

@@ -11,7 +11,15 @@ service Worker  {
   rpc GetSaltAndSRP(GetSaltAndSRPRequest) returns (GetSaltAndSRPResponse);
   rpc ExchangeEphemeralPublic(ExchangeEphemeralPublicRequest) returns (ExchangeEphemeralPublicResponse);
   rpc VerifyClientProof(VerifyClientProofRequest) returns (VerifyClientProofResponse);
+  rpc Notify(NotifyRequest) returns (NotifyResponse);
 }
+
+message NotifyRequest {
+  bytes Message = 1;
+}
+
+message NotifyResponse {}
+
 
 message VerifyClientProofRequest {
   bytes ClientProof = 1;

@@ -31,8 +31,48 @@ type Coordinator struct {
 // deleteChan sends DeleteApplicationRequest's from the wsServer to ListenDeleteApplication goroutine
 var deleteChan chan DeleteApplicationRequest
 
+var notificationChan chan NotifyRequest
+
 // wsServer is an instance of WebsocketServer, started when the coordinator starts up
 var wsServer *WebsocketServer
+
+func (c *Coordinator) ListenNotification() {
+	for {
+		var req NotifyRequest
+		req, ok := <-notificationChan
+
+		if !ok {
+			fmt.Println("nch error")
+			continue
+		}
+		go func(request *NotifyRequest) {
+			Debug(dInfo, "notifying %v\n", request)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			worker := c.workers[request.WorkerIp]
+			if worker == nil {
+				Debug(dInfo, "didn't find that specific ip\n")
+				return
+			}
+			Debug(dInfo, "worker found %v\n", worker)
+			_, err := worker.client.Notify(
+				ctx,
+				&pb.NotifyRequest{
+					Message: encrypt([]byte("come here")),
+				},
+			)
+			st, ok := status.FromError(err)
+			checkCodeParseOk(ok)
+
+			if err != nil {
+				// TODO: handle various error codes
+				fmt.Println(st.Code())
+				return
+			}
+
+		}(&req)
+	}
+}
 
 // ListenDeleteApplication wrapper for the server to call
 func (c *Coordinator) ListenDeleteApplication() {
@@ -251,7 +291,7 @@ func (c *Coordinator) DiscoveryRoutine() {
 
 func (c *Coordinator) HeartbeatRoutine() {
 	cycle := 0
-	for cycle < 100 {
+	for cycle < 1000 {
 		c.discoveryMu.Lock()
 		c.BroadcastHeartbeats(cycle)
 		cycle++

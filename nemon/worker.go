@@ -246,17 +246,18 @@ func (ws *workerServer) GetApps(_ context.Context, _ *pb.GetAppsRequest) (*pb.Ge
 		var data []string
 		for i:=0;i<len(res[0]);i++{
 			
-			temp += string(res[0][i])
-			if string(res[0][i]) == " "{
-				// if strings.Contains(temp,"."){
-				// 	temp = ""
-				// 	continue
+			
+			if string(res[0][i]) == " " || string(res[0][i]) == "\n"{
+				if strings.Contains(temp,"."){
+					temp = ""
+					continue
 
-				// }
+				}
 				data = append(data,temp)
 				temp = ""
+				continue;
 			}
-
+			temp += string(res[0][i])
 		}
 		fmt.Println(data[2])
 		
